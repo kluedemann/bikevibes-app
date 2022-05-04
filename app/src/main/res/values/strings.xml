@@ -1,5 +1,10 @@
 <resources>
     <string name="app_name">BikeApp</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="data_text">Hello World!</string>
-    <string name="count_button_text">Count</string>
+    <string name="count_button_text">Button</string>
+    <string name="x_label_text">x</string>
+    <string name="y_label_text">y</string>
+    <string name="z_label_text">z</string>
 </resources>
