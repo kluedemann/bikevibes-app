@@ -7,4 +7,5 @@
     <string name="x_label_text">x</string>
     <string name="y_label_text">y</string>
     <string name="z_label_text">z</string>
+    <string name="location_text">Location</string>
 </resources>
