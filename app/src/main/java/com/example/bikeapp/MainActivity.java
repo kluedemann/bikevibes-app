@@ -2,6 +2,7 @@ package com.example.bikeapp;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.room.Room;
 
 import android.Manifest;
 import android.content.Context;
@@ -25,6 +26,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private Sensor mAccelerometer;
     private TextView[] dataViews;
     private TextView[] locationViews;
+    private MyDao myDao;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,6 +58,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         final int MIN_DIST = 10;
         LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, MIN_DELAY, MIN_DIST, this);
+
+        // Create the database and Dao
+        //AppDatabase db = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, "bike-db").build();
+        //myDao = db.myDao();
     }
 
     protected void onResume() {
@@ -73,13 +79,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     public void onSensorChanged(SensorEvent event) {
-        //Log.d(TAG, String.format("%f, %f, %f, %d", event.values[0], event.values[1], event.values[2], event.timestamp));
+        Log.d(TAG, String.format("%f, %f, %f, %d", event.values[0], event.values[1], event.values[2], event.timestamp));
         updateAccel(event.values);
+        //myDao.insertAccel(new AccelerometerData());
     }
 
     public void onLocationChanged(Location loc) {
-        //Log.d(TAG, String.format("%f, %f, %d", loc.getLatitude(), loc.getLongitude(), loc.getTime());
+        Log.d(TAG, String.format("%f, %f, %d", loc.getLatitude(), loc.getLongitude(), loc.getTime()));
         updateLocation(loc.getLatitude(), loc.getLongitude());
+        //1651875536943  1651875871972 1651875876670 19663896732000
     }
 
     private void updateAccel(float[] values) {
