@@ -18,7 +18,11 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.TextView;
 
+import java.util.Date;
 import java.util.Locale;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener, LocationListener {
     private static final String TAG = "MainActivity";
@@ -27,6 +31,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private TextView[] dataViews;
     private TextView[] locationViews;
     private MyDao myDao;
+    private ExecutorService executorService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,8 +65,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, MIN_DELAY, MIN_DIST, this);
 
         // Create the database and Dao
-        //AppDatabase db = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, "bike-db").build();
-        //myDao = db.myDao();
+        AppDatabase db = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, "bike.db").build();
+        myDao = db.myDao();
+
+        // Create background thread to handle DB operations
+        executorService = Executors.newFixedThreadPool(1);
     }
 
     protected void onResume() {
@@ -79,27 +87,29 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     public void onSensorChanged(SensorEvent event) {
-        Log.d(TAG, String.format("%f, %f, %f, %d", event.values[0], event.values[1], event.values[2], event.timestamp));
         updateAccel(event.values);
-        //myDao.insertAccel(new AccelerometerData());
     }
 
     public void onLocationChanged(Location loc) {
-        Log.d(TAG, String.format("%f, %f, %d", loc.getLatitude(), loc.getLongitude(), loc.getTime()));
         updateLocation(loc.getLatitude(), loc.getLongitude());
-        //1651875536943  1651875871972 1651875876670 19663896732000
     }
 
     private void updateAccel(float[] values) {
         // Update accelerometer text boxes
+        Date date = new Date();
+        //Log.d(TAG, String.format("%f, %f, %f, %d", values[0], values[1], values[2], date.getTime()));
         for (int i = 0; i < 3; i++) {
             dataViews[i].setText(String.format(Locale.getDefault(), "%.2f", values[i]));
         }
+        //myDao.insertAccel(new AccelerometerData(date.getTime(), values[0], values[1], values[2]));
     }
 
     private void updateLocation(double latitude, double longitude) {
         // Update location text boxes
+        Date date = new Date();
+        Log.d(TAG, String.format("%f, %f, %d", latitude, longitude, date.getTime()));
         locationViews[0].setText(String.format(Locale.getDefault(),"%f", latitude));
         locationViews[1].setText(String.format(Locale.getDefault(), "%f", longitude));
+        executorService.execute(() -> myDao.insertLocation(new LocationData(date.getTime(), latitude, longitude)));
     }
 }

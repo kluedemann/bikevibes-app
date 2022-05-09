@@ -20,13 +20,4 @@ public class AccelerometerData {
         this.y = y;
         this.z = z;
     }
-
-    public AccelerometerData(SensorEvent event) {
-        timestamp = event.timestamp;
-        x = event.values[0];
-        y = event.values[1];
-        z = event.values[2];
-    }
-
-
 }
