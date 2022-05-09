@@ -97,11 +97,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private void updateAccel(float[] values) {
         // Update accelerometer text boxes
         Date date = new Date();
-        //Log.d(TAG, String.format("%f, %f, %f, %d", values[0], values[1], values[2], date.getTime()));
+        Log.d(TAG, String.format("%f, %f, %f, %d", values[0], values[1], values[2], date.getTime()));
         for (int i = 0; i < 3; i++) {
             dataViews[i].setText(String.format(Locale.getDefault(), "%.2f", values[i]));
         }
-        //myDao.insertAccel(new AccelerometerData(date.getTime(), values[0], values[1], values[2]));
+
+        // Store Data in local database
+        AccelerometerData accelData = new AccelerometerData(date.getTime(), values[0], values[1], values[2]);
+        executorService.execute(() -> myDao.insertAccel(accelData));
     }
 
     private void updateLocation(double latitude, double longitude) {
@@ -110,6 +113,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         Log.d(TAG, String.format("%f, %f, %d", latitude, longitude, date.getTime()));
         locationViews[0].setText(String.format(Locale.getDefault(),"%f", latitude));
         locationViews[1].setText(String.format(Locale.getDefault(), "%f", longitude));
-        executorService.execute(() -> myDao.insertLocation(new LocationData(date.getTime(), latitude, longitude)));
+
+        // Store Data in Local Database
+        LocationData locData = new LocationData(date.getTime(), latitude, longitude);
+        executorService.execute(() -> myDao.insertLocation(locData));
     }
 }
