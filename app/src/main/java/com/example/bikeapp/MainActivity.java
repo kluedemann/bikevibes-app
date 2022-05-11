@@ -1,6 +1,7 @@
 package com.example.bikeapp;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.app.ActivityCompat;
 import androidx.room.Room;
 
@@ -16,11 +17,12 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.Date;
 import java.util.Locale;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -32,6 +34,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private TextView[] locationViews;
     private MyDao myDao;
     private ExecutorService executorService;
+    private boolean isTracking = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,6 +73,25 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         // Create background thread to handle DB operations
         executorService = Executors.newFixedThreadPool(1);
+
+        // Handle Tracking switch
+        SwitchCompat mySwitch = (SwitchCompat) findViewById(R.id.tracking_switch);
+        mySwitch.setOnCheckedChangeListener((compoundButton, b) -> isTracking = b);
+
+        // Handle Upload Button
+        // TODO: Currently only deletes local data to prevent using all space in testing
+        Button myButton = (Button) findViewById(R.id.upload_button);
+        myButton.setOnClickListener(view -> {
+            // Clear data from local storage
+            executorService.execute(() -> {
+                myDao.clearLocation();
+                myDao.clearAccel();
+            });
+
+            // Display success message
+            Toast myToast = Toast.makeText(this, R.string.uploaded_data_text, Toast.LENGTH_SHORT);
+            myToast.show();
+        });
     }
 
     protected void onResume() {
@@ -103,8 +125,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
 
         // Store Data in local database
-        AccelerometerData accelData = new AccelerometerData(date.getTime(), values[0], values[1], values[2]);
-        executorService.execute(() -> myDao.insertAccel(accelData));
+        if (isTracking) {
+            AccelerometerData accelData = new AccelerometerData(date.getTime(), values[0], values[1], values[2]);
+            executorService.execute(() -> myDao.insertAccel(accelData));
+        }
     }
 
     private void updateLocation(double latitude, double longitude) {
@@ -115,7 +139,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         locationViews[1].setText(String.format(Locale.getDefault(), "%f", longitude));
 
         // Store Data in Local Database
-        LocationData locData = new LocationData(date.getTime(), latitude, longitude);
-        executorService.execute(() -> myDao.insertLocation(locData));
+        if (isTracking) {
+            LocationData locData = new LocationData(date.getTime(), latitude, longitude);
+            executorService.execute(() -> myDao.insertLocation(locData));
+        }
     }
 }

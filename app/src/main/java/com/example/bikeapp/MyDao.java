@@ -3,8 +3,7 @@ package com.example.bikeapp;
 import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
-
-import io.reactivex.rxjava3.core.Completable;
+import androidx.room.Query;
 
 @Dao
 public interface MyDao {
@@ -13,4 +12,11 @@ public interface MyDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertAccel(AccelerometerData acc);
+
+    @Query("DELETE FROM AccelerometerData")
+    void clearAccel();
+
+    @Query("DELETE FROM LocationData")
+    void clearLocation();
+
 }

@@ -6,4 +6,9 @@
     <string name="location_text">Location</string>
     <string name="accelerometer_text">Accelerometer</string>
     <string name="unknown_text">Unknown</string>
+    <string name="tracking_text">Tracking</string>
+    <string name="upload_text">Delete</string>
+    <string name="longitude_text">Longitude</string>
+    <string name="latitude_text">Latitude</string>
+    <string name="uploaded_data_text">Data Deleted</string>
 </resources>
