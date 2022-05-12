@@ -75,17 +75,25 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         executorService = Executors.newFixedThreadPool(1);
 
         // Handle Tracking switch
-        SwitchCompat mySwitch = (SwitchCompat) findViewById(R.id.tracking_switch);
-        mySwitch.setOnCheckedChangeListener((compoundButton, b) -> isTracking = b);
+        SwitchCompat mySwitch = findViewById(R.id.tracking_switch);
+        mySwitch.setOnCheckedChangeListener((compoundButton, b) -> {
+            isTracking = b;
+            if (isTracking) {
+                Log.d(TAG, "TRACKING STARTED");
+            } else {
+                Log.d(TAG, "TRACKING ENDED");
+            }
+        });
 
         // Handle Upload Button
         // TODO: Currently only deletes local data to prevent using all space in testing
-        Button myButton = (Button) findViewById(R.id.upload_button);
+        Button myButton = findViewById(R.id.upload_button);
         myButton.setOnClickListener(view -> {
             // Clear data from local storage
             executorService.execute(() -> {
-                myDao.clearLocation();
-                myDao.clearAccel();
+                int countLoc = myDao.clearLocation();
+                int countAccel = myDao.clearAccel();
+                Log.d(TAG, String.format("DELETED ROWS: %d, %d", countLoc, countAccel));
             });
 
             // Display success message
@@ -119,7 +127,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private void updateAccel(float[] values) {
         // Update accelerometer text boxes
         Date date = new Date();
-        Log.d(TAG, String.format("%f, %f, %f, %d", values[0], values[1], values[2], date.getTime()));
+        Log.d(TAG, String.format("ACCELEROMETER: %f, %f, %f, %d", values[0], values[1], values[2], date.getTime()));
         for (int i = 0; i < 3; i++) {
             dataViews[i].setText(String.format(Locale.getDefault(), "%.2f", values[i]));
         }
@@ -134,7 +142,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private void updateLocation(double latitude, double longitude) {
         // Update location text boxes
         Date date = new Date();
-        Log.d(TAG, String.format("%f, %f, %d", latitude, longitude, date.getTime()));
+        Log.d(TAG, String.format("LOCATION: %f, %f, %d", latitude, longitude, date.getTime()));
         locationViews[0].setText(String.format(Locale.getDefault(),"%f", latitude));
         locationViews[1].setText(String.format(Locale.getDefault(), "%f", longitude));
 
@@ -144,4 +152,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             executorService.execute(() -> myDao.insertLocation(locData));
         }
     }
+
+    @Override
+    public void onStatusChanged(String provider, int status, Bundle extras) {
+        // Removes error on old API
+    }
+
 }

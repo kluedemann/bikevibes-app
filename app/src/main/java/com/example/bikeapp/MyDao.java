@@ -14,9 +14,9 @@ public interface MyDao {
     void insertAccel(AccelerometerData acc);
 
     @Query("DELETE FROM AccelerometerData")
-    void clearAccel();
+    int clearAccel();
 
     @Query("DELETE FROM LocationData")
-    void clearLocation();
+    int clearLocation();
 
 }
