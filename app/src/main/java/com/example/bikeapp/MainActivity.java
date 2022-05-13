@@ -29,6 +29,7 @@ import java.util.concurrent.Executors;
 public class MainActivity extends AppCompatActivity implements SensorEventListener, LocationListener {
     private static final String TAG = "MainActivity";
     private SensorManager mSensorManager;
+    private LocationManager locationManager;
     private Sensor mAccelerometer;
     private TextView[] dataViews;
     private TextView[] locationViews;
@@ -43,7 +44,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         // Get Accelerometer Sensor
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
+        if (mAccelerometer == null) {
+            mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        }
+
+        /*  List Sensors
+        List<Sensor> sensors = mSensorManager.getSensorList(Sensor.TYPE_ALL);
+        for (int i = 0; i < sensors.size(); i++) {
+            Log.d(TAG, sensors.get(i).toString());
+        }
+        */
 
         // Collect Text boxes to display data
         dataViews = new TextView[3];
@@ -54,18 +65,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         locationViews[0] = findViewById(R.id.latitude_data);
         locationViews[1] = findViewById(R.id.longitude_data);
 
-        // Check if permissions have been granted, request them if not
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: ASSUMES PERMISSIONS ARE ALWAYS ACCEPTED
-            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
-        }
-
         // Enable location tracking
-        final int MIN_DELAY = 5 * 1000;
-        final int MIN_DIST = 10;
-        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, MIN_DELAY, MIN_DIST, this);
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
         // Create the database and Dao
         AppDatabase db = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, "bike.db").build();
@@ -105,17 +106,34 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     protected void onResume() {
         super.onResume();
         mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+
+        // Check if permissions have been granted, request them if not
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: ASSUMES PERMISSIONS ARE ALWAYS ACCEPTED
+            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+        }
+
+        // TODO: Still crashes if you disable location while app is open (use BroadcastReceiver?)
+        // Ensure that location is enabled
+        final int MIN_DELAY = 5 * 1000;
+        final int MIN_DIST = 10;
+        if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, MIN_DELAY, MIN_DIST, this);
+        }
     }
 
     protected void onPause() {
         super.onPause();
         mSensorManager.unregisterListener(this);
+        //locationManager.removeUpdates(this);
     }
 
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
         // Sensor Accuracy Changed
     }
 
+    // TODO: Differentiate between accelerometer and linear acceleration
     public void onSensorChanged(SensorEvent event) {
         updateAccel(event.values);
     }
