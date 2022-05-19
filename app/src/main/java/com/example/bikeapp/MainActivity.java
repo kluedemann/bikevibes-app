@@ -21,6 +21,16 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
@@ -90,6 +100,47 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // TODO: Currently only deletes local data to prevent using all space in testing
         Button myButton = findViewById(R.id.upload_button);
         myButton.setOnClickListener(view -> {
+            String location_url = "http://162.246.157.171:8080/upload/location?user_id=test&time_stamp=0&trip_id=0&latitude=0.0&longitude=0.0";
+            String accel_url = "http://162.246.157.171:8080/upload/accelerometer?user_id=test&time_stamp=0&trip_id=0&x_accel=0.0&y_accel=0.0&z_accel=0.0";
+            RequestQueue queue = Volley.newRequestQueue(this);
+            JsonObjectRequest jORequest = new JsonObjectRequest(Request.Method.POST, location_url, null, new Response.Listener<JSONObject>() {
+                @Override
+                public void onResponse(JSONObject response) {
+                    try {
+                        Log.d(TAG, String.format("RESPONSE: %s", response.get("success")));
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }, new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
+                    // TODO: Handle error
+                    Log.e(TAG, error.toString());
+                }
+            });
+
+            JsonObjectRequest jORequest2 = new JsonObjectRequest(Request.Method.POST, accel_url, null, new Response.Listener<JSONObject>() {
+                @Override
+                public void onResponse(JSONObject response) {
+                    try {
+                        Log.d(TAG, String.format("RESPONSE: %s", response.get("success")));
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }, new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
+                    // TODO: Handle error
+                    Log.e(TAG, error.toString());
+                }
+            });
+
+            queue.add(jORequest);
+            queue.add(jORequest2);
+
+
             // Clear data from local storage
             executorService.execute(() -> {
                 int countLoc = myDao.clearLocation();
@@ -145,7 +196,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private void updateAccel(float[] values) {
         // Update accelerometer text boxes
         Date date = new Date();
-        Log.d(TAG, String.format("ACCELEROMETER: %f, %f, %f, %d", values[0], values[1], values[2], date.getTime()));
+        //Log.d(TAG, String.format("ACCELEROMETER: %f, %f, %f, %d", values[0], values[1], values[2], date.getTime()));
         for (int i = 0; i < 3; i++) {
             dataViews[i].setText(String.format(Locale.getDefault(), "%.2f", values[i]));
         }
@@ -160,7 +211,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private void updateLocation(double latitude, double longitude) {
         // Update location text boxes
         Date date = new Date();
-        Log.d(TAG, String.format("LOCATION: %f, %f, %d", latitude, longitude, date.getTime()));
+        //Log.d(TAG, String.format("LOCATION: %f, %f, %d", latitude, longitude, date.getTime()));
         locationViews[0].setText(String.format(Locale.getDefault(),"%f", latitude));
         locationViews[1].setText(String.format(Locale.getDefault(), "%f", longitude));
 
