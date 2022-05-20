@@ -32,6 +32,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -100,57 +101,43 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // TODO: Currently only deletes local data to prevent using all space in testing
         Button myButton = findViewById(R.id.upload_button);
         myButton.setOnClickListener(view -> {
-            String location_url = "http://162.246.157.171:8080/upload/location?user_id=test&time_stamp=0&trip_id=0&latitude=0.0&longitude=0.0";
-            String accel_url = "http://162.246.157.171:8080/upload/accelerometer?user_id=test&time_stamp=0&trip_id=0&x_accel=0.0&y_accel=0.0&z_accel=0.0";
-            RequestQueue queue = Volley.newRequestQueue(this);
-            JsonObjectRequest jORequest = new JsonObjectRequest(Request.Method.POST, location_url, null, new Response.Listener<JSONObject>() {
-                @Override
-                public void onResponse(JSONObject response) {
-                    try {
-                        Log.d(TAG, String.format("RESPONSE: %s", response.get("success")));
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }, new Response.ErrorListener() {
-                @Override
-                public void onErrorResponse(VolleyError error) {
-                    // TODO: Handle error
-                    Log.e(TAG, error.toString());
-                }
-            });
 
-            JsonObjectRequest jORequest2 = new JsonObjectRequest(Request.Method.POST, accel_url, null, new Response.Listener<JSONObject>() {
-                @Override
-                public void onResponse(JSONObject response) {
-                    try {
-                        Log.d(TAG, String.format("RESPONSE: %s", response.get("success")));
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }, new Response.ErrorListener() {
-                @Override
-                public void onErrorResponse(VolleyError error) {
-                    // TODO: Handle error
-                    Log.e(TAG, error.toString());
-                }
-            });
-
-            queue.add(jORequest);
-            queue.add(jORequest2);
 
 
             // Clear data from local storage
             executorService.execute(() -> {
-                int countLoc = myDao.clearLocation();
-                int countAccel = myDao.clearAccel();
-                Log.d(TAG, String.format("DELETED ROWS: %d, %d", countLoc, countAccel));
+                RequestQueue queue = Volley.newRequestQueue(this);
+
+                List<LocationData> locations = myDao.getLocation();
+                for (int i = 0; i < locations.size(); i++) {
+                    LocationData loc = locations.get(i);
+                    Log.d(TAG, String.format("LOCATION: %f, %f, %d", loc.latitude, loc.longitude, loc.timestamp));
+                    uploadLocation(loc, queue);
+                }
+                //int countLoc = myDao.clearLocation();
+
+                List<AccelerometerData> accel_readings = myDao.getAccel();
+                for (int i = 0; i < accel_readings.size(); i++) {
+                    AccelerometerData acc = accel_readings.get(i);
+                    Log.d(TAG, String.format("ACCEL: %f, %f, %f, %d", acc.x, acc.y, acc.z, acc.timestamp));
+                    uploadAccel(acc, queue);
+                }
+                //int countAccel = myDao.clearAccel();
+                //Log.d(TAG, String.format("DELETED ROWS: %d, %d", countLoc, countAccel));
+
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        // Display success message
+                        String toast_text = "Uploaded data";
+                        //String toast_text = String.format(Locale.getDefault(), "Uploaded rows: %d", countLoc + countAccel);
+                        Toast myToast = Toast.makeText(MainActivity.this, toast_text, Toast.LENGTH_SHORT);
+                        myToast.show();
+                    }
+                });
             });
 
-            // Display success message
-            Toast myToast = Toast.makeText(this, R.string.uploaded_data_text, Toast.LENGTH_SHORT);
-            myToast.show();
+
         });
     }
 
@@ -227,4 +214,55 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // Removes error on old API
     }
 
+    private void uploadLocation(LocationData loc, RequestQueue queue) {
+        String location_temp = "http://162.246.157.171:8080/upload/location?user_id=%s&time_stamp=%d&trip_id=%d&latitude=%f&longitude=%f";
+        String location_url = String.format(Locale.US, location_temp, "test", loc.timestamp, 0, loc.latitude, loc.longitude);
+        JsonObjectRequest jORequest = new JsonObjectRequest(Request.Method.POST, location_url, null, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+                try {
+                    Log.d(TAG, String.format("SUCCESS: %s", response.get("success")));
+                    if ((boolean) response.get("success")) {
+                        Log.d(TAG,"ROW DELETED");
+                        executorService.execute(() -> myDao.deleteLocation(loc));
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                // TODO: Handle error
+                Log.e(TAG, error.toString());
+            }
+        });
+        queue.add(jORequest);
+    }
+
+    private void uploadAccel(AccelerometerData acc, RequestQueue queue) {
+        String accel_temp = "http://162.246.157.171:8080/upload/accelerometer?user_id=%s&time_stamp=%d&trip_id=%d&x_accel=%f&y_accel=%f&z_accel=%f";
+        String accel_url = String.format(Locale.US, accel_temp, "test", acc.timestamp, 0, acc.x, acc.y, acc.z);
+        JsonObjectRequest jORequest = new JsonObjectRequest(Request.Method.POST, accel_url, null, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+                try {
+                    Log.d(TAG, String.format("SUCCESS: %s", response.get("success")));
+                    if ((boolean) response.get("success")) {
+                        Log.d(TAG,"ROW DELETED");
+                        executorService.execute(() -> myDao.deleteAccel(acc));
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                // TODO: Handle error
+                Log.e(TAG, error.toString());
+            }
+        });
+        queue.add(jORequest);
+    }
 }
