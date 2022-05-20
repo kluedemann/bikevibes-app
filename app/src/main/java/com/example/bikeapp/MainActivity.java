@@ -47,6 +47,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private MyDao myDao;
     private ExecutorService executorService;
     private boolean isTracking = false;
+    private boolean isUploadEnabled = true;
+    private int numUploaded;
+    private int numResponses;
+    private int numToUpload;
+    private Button uploadButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -99,16 +104,25 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         // Handle Upload Button
         // TODO: Currently only deletes local data to prevent using all space in testing
-        Button myButton = findViewById(R.id.upload_button);
-        myButton.setOnClickListener(view -> {
-
-
-
+        uploadButton = findViewById(R.id.upload_button);
+        uploadButton.setOnClickListener(view -> {
+            // Button is disabled
+            if (!isUploadEnabled) {
+                Log.d(TAG, "DISABLED!");
+                return;
+            }
             // Clear data from local storage
             executorService.execute(() -> {
+                disableButton();
                 RequestQueue queue = Volley.newRequestQueue(this);
 
                 List<LocationData> locations = myDao.getLocation();
+                List<AccelerometerData> accel_readings = myDao.getAccel();
+
+                numToUpload = locations.size() + accel_readings.size();
+                numResponses = 0;
+                numUploaded = 0;
+
                 for (int i = 0; i < locations.size(); i++) {
                     LocationData loc = locations.get(i);
                     Log.d(TAG, String.format("LOCATION: %f, %f, %d", loc.latitude, loc.longitude, loc.timestamp));
@@ -116,7 +130,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 }
                 //int countLoc = myDao.clearLocation();
 
-                List<AccelerometerData> accel_readings = myDao.getAccel();
                 for (int i = 0; i < accel_readings.size(); i++) {
                     AccelerometerData acc = accel_readings.get(i);
                     Log.d(TAG, String.format("ACCEL: %f, %f, %f, %d", acc.x, acc.y, acc.z, acc.timestamp));
@@ -125,16 +138,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 //int countAccel = myDao.clearAccel();
                 //Log.d(TAG, String.format("DELETED ROWS: %d, %d", countLoc, countAccel));
 
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
+
+                if (numToUpload == 0) {
+                    enableButton();
+                    runOnUiThread(() -> {
                         // Display success message
-                        String toast_text = "Uploaded data";
-                        //String toast_text = String.format(Locale.getDefault(), "Uploaded rows: %d", countLoc + countAccel);
-                        Toast myToast = Toast.makeText(MainActivity.this, toast_text, Toast.LENGTH_SHORT);
+                        Toast myToast = Toast.makeText(MainActivity.this, "No data", Toast.LENGTH_SHORT);
                         myToast.show();
-                    }
-                });
+                    });
+                }
             });
 
 
@@ -220,14 +232,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         JsonObjectRequest jORequest = new JsonObjectRequest(Request.Method.POST, location_url, null, new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject response) {
-                try {
-                    Log.d(TAG, String.format("SUCCESS: %s", response.get("success")));
-                    if ((boolean) response.get("success")) {
-                        Log.d(TAG,"ROW DELETED");
-                        executorService.execute(() -> myDao.deleteLocation(loc));
-                    }
-                } catch (JSONException e) {
-                    e.printStackTrace();
+                boolean isSuccess = response.optBoolean("success", false);
+                Log.d(TAG, String.format("SUCCESS: %s", isSuccess));
+                responseReceived(isSuccess);
+                if (isSuccess) {
+                    //Log.d(TAG,"ROW DELETED");
+                    executorService.execute(() -> myDao.deleteLocation(loc));
                 }
             }
         }, new Response.ErrorListener() {
@@ -235,6 +245,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             public void onErrorResponse(VolleyError error) {
                 // TODO: Handle error
                 Log.e(TAG, error.toString());
+                responseReceived(false);
             }
         });
         queue.add(jORequest);
@@ -246,14 +257,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         JsonObjectRequest jORequest = new JsonObjectRequest(Request.Method.POST, accel_url, null, new Response.Listener<JSONObject>() {
             @Override
             public void onResponse(JSONObject response) {
-                try {
-                    Log.d(TAG, String.format("SUCCESS: %s", response.get("success")));
-                    if ((boolean) response.get("success")) {
-                        Log.d(TAG,"ROW DELETED");
-                        executorService.execute(() -> myDao.deleteAccel(acc));
-                    }
-                } catch (JSONException e) {
-                    e.printStackTrace();
+                boolean isSuccess = response.optBoolean("success", false);
+                Log.d(TAG, String.format("SUCCESS: %s", isSuccess));
+                responseReceived(isSuccess);
+                if (isSuccess) {
+                    //Log.d(TAG,"ROW DELETED");
+                    executorService.execute(() -> myDao.deleteAccel(acc));
                 }
             }
         }, new Response.ErrorListener() {
@@ -261,8 +270,33 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             public void onErrorResponse(VolleyError error) {
                 // TODO: Handle error
                 Log.e(TAG, error.toString());
+                responseReceived(false);
             }
         });
         queue.add(jORequest);
+    }
+
+    private void responseReceived(boolean success) {
+        if (success) {
+            numUploaded++;
+        }
+        numResponses++;
+        if (numResponses == numToUpload) {
+            Log.d(TAG, String.format("SUCCESSES: %d, TOTAL: %d", numUploaded, numResponses));
+            enableButton();
+            String toast_text = String.format(Locale.getDefault(), "Uploaded rows: %d/%d", numUploaded, numToUpload);
+            Toast myToast = Toast.makeText(MainActivity.this, toast_text, Toast.LENGTH_SHORT);
+            myToast.show();
+        }
+    }
+
+    private void disableButton() {
+        isUploadEnabled = false;
+        uploadButton.setBackgroundColor(getResources().getColor(R.color.grey));
+    }
+
+    private void enableButton() {
+        isUploadEnabled = true;
+        uploadButton.setBackgroundColor(getResources().getColor(R.color.purple_700));
     }
 }
