@@ -23,13 +23,10 @@ import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
+import com.android.volley.ServerError;
+import com.android.volley.TimeoutError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
-
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.util.Date;
 import java.util.List;
@@ -52,6 +49,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private int numResponses;
     private int numToUpload;
     private Button uploadButton;
+    private RequestQueue queue;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -102,8 +100,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             }
         });
 
+        // Initialize HTTP request queue
+        queue = Volley.newRequestQueue(this);
+
         // Handle Upload Button
-        // TODO: Currently only deletes local data to prevent using all space in testing
         uploadButton = findViewById(R.id.upload_button);
         uploadButton.setOnClickListener(view -> {
             // Button is disabled
@@ -111,34 +111,35 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 Log.d(TAG, "DISABLED!");
                 return;
             }
-            // Clear data from local storage
+
+            // Get data from local DB and upload to server
             executorService.execute(() -> {
                 disableButton();
-                RequestQueue queue = Volley.newRequestQueue(this);
 
+                // Query data
                 List<LocationData> locations = myDao.getLocation();
                 List<AccelerometerData> accel_readings = myDao.getAccel();
 
+                // Initialize counters
                 numToUpload = locations.size() + accel_readings.size();
                 numResponses = 0;
                 numUploaded = 0;
 
+                // Upload location data
                 for (int i = 0; i < locations.size(); i++) {
                     LocationData loc = locations.get(i);
-                    Log.d(TAG, String.format("LOCATION: %f, %f, %d", loc.latitude, loc.longitude, loc.timestamp));
-                    uploadLocation(loc, queue);
+                    //Log.d(TAG, String.format("LOCATION: %f, %f, %d", loc.latitude, loc.longitude, loc.timestamp));
+                    uploadLocation(loc);
                 }
-                //int countLoc = myDao.clearLocation();
 
+                // Upload accelerometer data
                 for (int i = 0; i < accel_readings.size(); i++) {
                     AccelerometerData acc = accel_readings.get(i);
-                    Log.d(TAG, String.format("ACCEL: %f, %f, %f, %d", acc.x, acc.y, acc.z, acc.timestamp));
-                    uploadAccel(acc, queue);
+                    //Log.d(TAG, String.format("ACCEL: %f, %f, %f, %d", acc.x, acc.y, acc.z, acc.timestamp));
+                    uploadAccel(acc);
                 }
-                //int countAccel = myDao.clearAccel();
-                //Log.d(TAG, String.format("DELETED ROWS: %d, %d", countLoc, countAccel));
 
-
+                // Display "No data" if nothing to upload
                 if (numToUpload == 0) {
                     enableButton();
                     runOnUiThread(() -> {
@@ -148,13 +149,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     });
                 }
             });
-
-
         });
     }
 
     protected void onResume() {
         super.onResume();
+
+        // Begin tracking accelerometer again
         mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
 
         // Check if permissions have been granted, request them if not
@@ -165,26 +166,30 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
 
         // TODO: Still crashes if you disable location while app is open (use BroadcastReceiver?)
-        // Ensure that location is enabled
+        // Begin location tracking if it is enabled
         final int MIN_DELAY = 5 * 1000;
         final int MIN_DIST = 10;
         if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, MIN_DELAY, MIN_DIST, this);
         }
+
+        enableButton();
     }
 
     protected void onPause() {
+        // Stop all background processes upon app being paused
         super.onPause();
         mSensorManager.unregisterListener(this);
-        //locationManager.removeUpdates(this);
+        locationManager.removeUpdates(this);
+        queue.cancelAll(TAG);
     }
 
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
         // Sensor Accuracy Changed
     }
 
-    // TODO: Differentiate between accelerometer and linear acceleration
     public void onSensorChanged(SensorEvent event) {
+        // TODO: Differentiate between accelerometer and linear acceleration
         updateAccel(event.values);
     }
 
@@ -193,12 +198,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     private void updateAccel(float[] values) {
+        // Track accelerometer values and upload to local database
+        // values - the x, y, and z components of acceleration in m/s^2
+
         // Update accelerometer text boxes
         Date date = new Date();
-        //Log.d(TAG, String.format("ACCELEROMETER: %f, %f, %f, %d", values[0], values[1], values[2], date.getTime()));
         for (int i = 0; i < 3; i++) {
             dataViews[i].setText(String.format(Locale.getDefault(), "%.2f", values[i]));
         }
+        //Log.d(TAG, String.format("ACCELEROMETER: %f, %f, %f, %d", values[0], values[1], values[2], date.getTime()));
 
         // Store Data in local database
         if (isTracking) {
@@ -208,11 +216,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     private void updateLocation(double latitude, double longitude) {
+        // Track GPS coordinates and upload to local database
+        // latitude, longitude - the coordinates received from the GPS
+
         // Update location text boxes
         Date date = new Date();
-        //Log.d(TAG, String.format("LOCATION: %f, %f, %d", latitude, longitude, date.getTime()));
         locationViews[0].setText(String.format(Locale.getDefault(),"%f", latitude));
         locationViews[1].setText(String.format(Locale.getDefault(), "%f", longitude));
+        //Log.d(TAG, String.format("LOCATION: %f, %f, %d", latitude, longitude, date.getTime()));
 
         // Store Data in Local Database
         if (isTracking) {
@@ -223,79 +234,113 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     @Override
     public void onStatusChanged(String provider, int status, Bundle extras) {
+        // Called upon LocationListener status changing
         // Removes error on old API
     }
 
-    private void uploadLocation(LocationData loc, RequestQueue queue) {
+    private void uploadLocation(LocationData loc) {
+        // Send an HTTP request containing the location data to the server
+        // Adds a request to the Volley request queue
+
         String location_temp = "http://162.246.157.171:8080/upload/location?user_id=%s&time_stamp=%d&trip_id=%d&latitude=%f&longitude=%f";
         String location_url = String.format(Locale.US, location_temp, "test", loc.timestamp, 0, loc.latitude, loc.longitude);
-        JsonObjectRequest jORequest = new JsonObjectRequest(Request.Method.POST, location_url, null, new Response.Listener<JSONObject>() {
-            @Override
-            public void onResponse(JSONObject response) {
-                boolean isSuccess = response.optBoolean("success", false);
-                Log.d(TAG, String.format("SUCCESS: %s", isSuccess));
-                responseReceived(isSuccess);
-                if (isSuccess) {
-                    //Log.d(TAG,"ROW DELETED");
-                    executorService.execute(() -> myDao.deleteLocation(loc));
-                }
+
+        // Create the HTTP request
+        JsonObjectRequest jORequest = new JsonObjectRequest(Request.Method.POST, location_url, null, response -> {
+            // onResponse: Called upon receiving a response from the server
+            //Log.d(TAG, String.format("SUCCESS: %s", isSuccess));
+            boolean isSuccess = response.optBoolean("success", false);
+            requestCompleted(isSuccess);
+            if (isSuccess) {
+                executorService.execute(() -> myDao.deleteLocation(loc));
             }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                // TODO: Handle error
-                Log.e(TAG, error.toString());
-                responseReceived(false);
+        }, error -> {
+            // onErrorResponse: Called upon receiving an error response
+            Log.e(TAG, error.toString());
+            if (error instanceof TimeoutError) {
+                // Sever could not be reached
+                queue.cancelAll(TAG);
+                enableButton();
+                Toast.makeText(MainActivity.this, "Connection timed out", Toast.LENGTH_SHORT).show();
+            } else if (error instanceof ServerError && error.networkResponse.statusCode == 500) {
+                // Discard local copy if server has duplicate data
+                executorService.execute(() -> myDao.deleteLocation(loc));
             }
+            requestCompleted(false);
         });
+
+        // Add request to the queue
+        jORequest.setTag(TAG);
         queue.add(jORequest);
     }
 
-    private void uploadAccel(AccelerometerData acc, RequestQueue queue) {
+    private void uploadAccel(AccelerometerData acc) {
+        // Send an HTTP request containing the accelerometer data to the server
+        // Adds a request to the Volley request queue
+
         String accel_temp = "http://162.246.157.171:8080/upload/accelerometer?user_id=%s&time_stamp=%d&trip_id=%d&x_accel=%f&y_accel=%f&z_accel=%f";
         String accel_url = String.format(Locale.US, accel_temp, "test", acc.timestamp, 0, acc.x, acc.y, acc.z);
-        JsonObjectRequest jORequest = new JsonObjectRequest(Request.Method.POST, accel_url, null, new Response.Listener<JSONObject>() {
-            @Override
-            public void onResponse(JSONObject response) {
-                boolean isSuccess = response.optBoolean("success", false);
-                Log.d(TAG, String.format("SUCCESS: %s", isSuccess));
-                responseReceived(isSuccess);
-                if (isSuccess) {
-                    //Log.d(TAG,"ROW DELETED");
-                    executorService.execute(() -> myDao.deleteAccel(acc));
-                }
+
+        // Create the HTTP request
+        JsonObjectRequest jORequest = new JsonObjectRequest(Request.Method.POST, accel_url, null, response -> {
+            // onResponse: Called upon receiving a response from the server
+            //Log.d(TAG, String.format("SUCCESS: %s", isSuccess));
+            boolean isSuccess = response.optBoolean("success", false);
+            requestCompleted(isSuccess);
+            if (isSuccess) {
+                executorService.execute(() -> myDao.deleteAccel(acc));
             }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                // TODO: Handle error
-                Log.e(TAG, error.toString());
-                responseReceived(false);
+        }, error -> {
+            // onErrorResponse: Called upon receiving an error response
+            Log.e(TAG, error.toString());
+            if (error instanceof TimeoutError) {
+                // Sever could not be reached
+                queue.cancelAll(TAG);
+                enableButton();
+                Toast myToast = Toast.makeText(MainActivity.this, "Connection timed out", Toast.LENGTH_SHORT);
+                myToast.show();
+            } else if (error instanceof ServerError && error.networkResponse.statusCode == 500) {
+                // Discard local copy if server has duplicate data
+                executorService.execute(() -> myDao.deleteAccel(acc));
             }
+            requestCompleted(false);
         });
+
+        // Add request to the queue
+        jORequest.setTag(TAG);
         queue.add(jORequest);
     }
 
-    private void responseReceived(boolean success) {
+    private void requestCompleted(boolean success) {
+        // Called upon receiving a response or error from an HTTP request
+        // success argument indicates whether the data was successfully uploaded
+        // Keep track of how many requests are completed and display success message
+
+        // Increment response counters
         if (success) {
             numUploaded++;
         }
         numResponses++;
+
+        // Display confirmation upon receiving final response
         if (numResponses == numToUpload) {
             Log.d(TAG, String.format("SUCCESSES: %d, TOTAL: %d", numUploaded, numResponses));
             enableButton();
+
+            // Display number of rows uploaded
             String toast_text = String.format(Locale.getDefault(), "Uploaded rows: %d/%d", numUploaded, numToUpload);
-            Toast myToast = Toast.makeText(MainActivity.this, toast_text, Toast.LENGTH_SHORT);
-            myToast.show();
+            Toast.makeText(MainActivity.this, toast_text, Toast.LENGTH_SHORT).show();
         }
     }
 
     private void disableButton() {
+        // Disable the upload button
         isUploadEnabled = false;
         uploadButton.setBackgroundColor(getResources().getColor(R.color.grey));
     }
 
     private void enableButton() {
+        // Enable the upload button
         isUploadEnabled = true;
         uploadButton.setBackgroundColor(getResources().getColor(R.color.purple_700));
     }
