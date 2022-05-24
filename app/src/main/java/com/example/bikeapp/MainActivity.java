@@ -116,36 +116,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             executorService.execute(() -> {
                 disableButton();
 
-                // Query data
-                List<LocationData> locations = myDao.getLocation();
-                List<AccelerometerData> accel_readings = myDao.getAccel();
-
-                // Initialize counters
-                numToUpload = locations.size() + accel_readings.size();
-                numResponses = 0;
-                numUploaded = 0;
-
-                // Upload location data
-                for (int i = 0; i < locations.size(); i++) {
-                    LocationData loc = locations.get(i);
-                    //Log.d(TAG, String.format("LOCATION: %f, %f, %d", loc.latitude, loc.longitude, loc.timestamp));
-                    uploadLocation(loc);
-                }
-
-                // Upload accelerometer data
-                for (int i = 0; i < accel_readings.size(); i++) {
-                    AccelerometerData acc = accel_readings.get(i);
-                    //Log.d(TAG, String.format("ACCEL: %f, %f, %f, %d", acc.x, acc.y, acc.z, acc.timestamp));
-                    uploadAccel(acc);
-                }
+                uploadData();
 
                 // Display "No data" if nothing to upload
                 if (numToUpload == 0) {
                     enableButton();
                     runOnUiThread(() -> {
                         // Display success message
-                        Toast myToast = Toast.makeText(MainActivity.this, "No data", Toast.LENGTH_SHORT);
-                        myToast.show();
+                        Toast.makeText(MainActivity.this, "No data", Toast.LENGTH_SHORT).show();
                     });
                 }
             });
@@ -343,5 +321,32 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // Enable the upload button
         isUploadEnabled = true;
         uploadButton.setBackgroundColor(getResources().getColor(R.color.purple_700));
+    }
+
+    private void uploadData() {
+        // Query data from the local database and upload it to the server
+
+        // Query data
+        List<LocationData> locations = myDao.getLocation();
+        List<AccelerometerData> accel_readings = myDao.getAccel();
+
+        // Initialize counters
+        numToUpload = locations.size() + accel_readings.size();
+        numResponses = 0;
+        numUploaded = 0;
+
+        // Upload location data
+        for (int i = 0; i < locations.size(); i++) {
+            LocationData loc = locations.get(i);
+            uploadLocation(loc);
+            //Log.d(TAG, String.format("LOCATION: %f, %f, %d", loc.latitude, loc.longitude, loc.timestamp));
+        }
+
+        // Upload accelerometer data
+        for (int i = 0; i < accel_readings.size(); i++) {
+            AccelerometerData acc = accel_readings.get(i);
+            uploadAccel(acc);
+            //Log.d(TAG, String.format("ACCEL: %f, %f, %f, %d", acc.x, acc.y, acc.z, acc.timestamp));
+        }
     }
 }
