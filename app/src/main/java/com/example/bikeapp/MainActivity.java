@@ -216,21 +216,21 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // Removes error on old API
     }
 
-    private void uploadLocation(LocationData loc) {
-        // Send an HTTP request containing the location data to the server
+
+    private void upload(DataInstance data) {
+        // Send an HTTP request containing the data instance to the server
         // Adds a request to the Volley request queue
 
-        String location_temp = "http://162.246.157.171:8080/upload/location?user_id=%s&time_stamp=%d&trip_id=%d&latitude=%f&longitude=%f";
-        String location_url = String.format(Locale.US, location_temp, "test", loc.timestamp, 0, loc.latitude, loc.longitude);
+        String url = data.getURL("test", 0);
 
         // Create the HTTP request
-        JsonObjectRequest jORequest = new JsonObjectRequest(Request.Method.POST, location_url, null, response -> {
+        JsonObjectRequest jORequest = new JsonObjectRequest(Request.Method.POST, url, null, response -> {
             // onResponse: Called upon receiving a response from the server
             //Log.d(TAG, String.format("SUCCESS: %s", isSuccess));
             boolean isSuccess = response.optBoolean("success", false);
             requestCompleted(isSuccess);
             if (isSuccess) {
-                executorService.execute(() -> myDao.deleteLocation(loc));
+                executorService.execute(() -> data.delete(myDao));
             }
         }, error -> {
             // onErrorResponse: Called upon receiving an error response
@@ -242,44 +242,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 Toast.makeText(MainActivity.this, "Connection timed out", Toast.LENGTH_SHORT).show();
             } else if (error instanceof ServerError && error.networkResponse.statusCode == 500) {
                 // Discard local copy if server has duplicate data
-                executorService.execute(() -> myDao.deleteLocation(loc));
-            }
-            requestCompleted(false);
-        });
-
-        // Add request to the queue
-        jORequest.setTag(TAG);
-        queue.add(jORequest);
-    }
-
-    private void uploadAccel(AccelerometerData acc) {
-        // Send an HTTP request containing the accelerometer data to the server
-        // Adds a request to the Volley request queue
-
-        String accel_temp = "http://162.246.157.171:8080/upload/accelerometer?user_id=%s&time_stamp=%d&trip_id=%d&x_accel=%f&y_accel=%f&z_accel=%f";
-        String accel_url = String.format(Locale.US, accel_temp, "test", acc.timestamp, 0, acc.x, acc.y, acc.z);
-
-        // Create the HTTP request
-        JsonObjectRequest jORequest = new JsonObjectRequest(Request.Method.POST, accel_url, null, response -> {
-            // onResponse: Called upon receiving a response from the server
-            //Log.d(TAG, String.format("SUCCESS: %s", isSuccess));
-            boolean isSuccess = response.optBoolean("success", false);
-            requestCompleted(isSuccess);
-            if (isSuccess) {
-                executorService.execute(() -> myDao.deleteAccel(acc));
-            }
-        }, error -> {
-            // onErrorResponse: Called upon receiving an error response
-            Log.e(TAG, error.toString());
-            if (error instanceof TimeoutError) {
-                // Sever could not be reached
-                queue.cancelAll(TAG);
-                enableButton();
-                Toast myToast = Toast.makeText(MainActivity.this, "Connection timed out", Toast.LENGTH_SHORT);
-                myToast.show();
-            } else if (error instanceof ServerError && error.networkResponse.statusCode == 500) {
-                // Discard local copy if server has duplicate data
-                executorService.execute(() -> myDao.deleteAccel(acc));
+                executorService.execute(() -> data.delete(myDao));
             }
             requestCompleted(false);
         });
@@ -338,14 +301,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // Upload location data
         for (int i = 0; i < locations.size(); i++) {
             LocationData loc = locations.get(i);
-            uploadLocation(loc);
+            upload(loc);
             //Log.d(TAG, String.format("LOCATION: %f, %f, %d", loc.latitude, loc.longitude, loc.timestamp));
         }
 
         // Upload accelerometer data
         for (int i = 0; i < accel_readings.size(); i++) {
             AccelerometerData acc = accel_readings.get(i);
-            uploadAccel(acc);
+            upload(acc);
             //Log.d(TAG, String.format("ACCEL: %f, %f, %f, %d", acc.x, acc.y, acc.z, acc.timestamp));
         }
     }
