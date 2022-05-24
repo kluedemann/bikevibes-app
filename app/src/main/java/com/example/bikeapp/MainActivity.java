@@ -7,6 +7,7 @@ import androidx.room.Room;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -31,6 +32,7 @@ import com.android.volley.toolbox.Volley;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -50,11 +52,25 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private int numToUpload;
     private Button uploadButton;
     private RequestQueue queue;
+    private String userID;
+    private int tripID;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // Get user/trip ids
+        SharedPreferences sharedPref = getPreferences(Context.MODE_PRIVATE);
+        userID = sharedPref.getString("user_id", null);
+        tripID = sharedPref.getInt("trip_id", 0);
+
+        // Initialize user/trip ids on first opening of app
+        if (userID == null) {
+            userID = UUID.randomUUID().toString();
+            //userID = "test";
+            writePrefs();
+        }
 
         // Get Accelerometer Sensor
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
@@ -94,8 +110,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         mySwitch.setOnCheckedChangeListener((compoundButton, b) -> {
             isTracking = b;
             if (isTracking) {
+                tripID++;
                 Log.d(TAG, "TRACKING STARTED");
             } else {
+                writePrefs();
                 Log.d(TAG, "TRACKING ENDED");
             }
         });
@@ -160,6 +178,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         mSensorManager.unregisterListener(this);
         locationManager.removeUpdates(this);
         queue.cancelAll(TAG);
+        writePrefs();
     }
 
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
@@ -188,7 +207,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         // Store Data in local database
         if (isTracking) {
-            AccelerometerData accelData = new AccelerometerData(date.getTime(), values[0], values[1], values[2]);
+            AccelerometerData accelData = new AccelerometerData(date.getTime(), values[0], values[1], values[2], tripID);
             executorService.execute(() -> myDao.insertAccel(accelData));
         }
     }
@@ -205,7 +224,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         // Store Data in Local Database
         if (isTracking) {
-            LocationData locData = new LocationData(date.getTime(), latitude, longitude);
+            LocationData locData = new LocationData(date.getTime(), latitude, longitude, tripID);
             executorService.execute(() -> myDao.insertLocation(locData));
         }
     }
@@ -221,7 +240,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // Send an HTTP request containing the data instance to the server
         // Adds a request to the Volley request queue
 
-        String url = data.getURL("test", 0);
+        String url = data.getURL(userID);
 
         // Create the HTTP request
         JsonObjectRequest jORequest = new JsonObjectRequest(Request.Method.POST, url, null, response -> {
@@ -311,5 +330,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             upload(acc);
             //Log.d(TAG, String.format("ACCEL: %f, %f, %f, %d", acc.x, acc.y, acc.z, acc.timestamp));
         }
+    }
+
+    private void writePrefs() {
+        SharedPreferences sharedPref = getPreferences(Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putString("user_id", userID);
+        editor.putInt("trip_id", tripID);
+        editor.apply();
     }
 }
