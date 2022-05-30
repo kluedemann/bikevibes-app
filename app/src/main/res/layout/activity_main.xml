@@ -154,7 +154,7 @@
         android:layout_height="wrap_content"
         android:minHeight="48dp"
         android:text="@string/tracking_text"
-        android:textColor="@color/purple_700"
+        android:textColor="?attr/colorPrimary"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

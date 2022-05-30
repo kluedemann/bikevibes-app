@@ -46,7 +46,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private MyDao myDao;
     private ExecutorService executorService;
     private boolean isTracking = false;
-    private boolean isUploadEnabled = true;
     private int numUploaded;
     private int numResponses;
     private int numToUpload;
@@ -113,6 +112,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 tripID++;
                 Log.d(TAG, "TRACKING STARTED");
             } else {
+                // TODO: Move this to other side and test it
                 writePrefs();
                 Log.d(TAG, "TRACKING ENDED");
             }
@@ -124,23 +124,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // Handle Upload Button
         uploadButton = findViewById(R.id.upload_button);
         uploadButton.setOnClickListener(view -> {
-            // Button is disabled
-            if (!isUploadEnabled) {
-                Log.d(TAG, "DISABLED!");
-                return;
-            }
-
             // Get data from local DB and upload to server
+            uploadButton.setEnabled(false);
             executorService.execute(() -> {
-                disableButton();
-
                 uploadData();
 
                 // Display "No data" if nothing to upload
                 if (numToUpload == 0) {
-                    enableButton();
                     runOnUiThread(() -> {
                         // Display success message
+                        uploadButton.setEnabled(true);
                         Toast.makeText(MainActivity.this, "No data", Toast.LENGTH_SHORT).show();
                     });
                 }
@@ -169,7 +162,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, MIN_DELAY, MIN_DIST, this);
         }
 
-        enableButton();
+        uploadButton.setEnabled(true);
     }
 
     protected void onPause() {
@@ -257,7 +250,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             if (error instanceof TimeoutError) {
                 // Sever could not be reached
                 queue.cancelAll(TAG);
-                enableButton();
+                uploadButton.setEnabled(true);
                 Toast.makeText(MainActivity.this, "Connection timed out", Toast.LENGTH_SHORT).show();
             } else if (error instanceof ServerError && error.networkResponse.statusCode == 500) {
                 // Discard local copy if server has duplicate data
@@ -285,24 +278,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // Display confirmation upon receiving final response
         if (numResponses == numToUpload) {
             Log.d(TAG, String.format("SUCCESSES: %d, TOTAL: %d", numUploaded, numResponses));
-            enableButton();
+            uploadButton.setEnabled(true);
 
             // Display number of rows uploaded
             String toast_text = String.format(Locale.getDefault(), "Uploaded rows: %d/%d", numUploaded, numToUpload);
             Toast.makeText(MainActivity.this, toast_text, Toast.LENGTH_SHORT).show();
         }
-    }
-
-    private void disableButton() {
-        // Disable the upload button
-        isUploadEnabled = false;
-        uploadButton.setBackgroundColor(getResources().getColor(R.color.grey));
-    }
-
-    private void enableButton() {
-        // Enable the upload button
-        isUploadEnabled = true;
-        uploadButton.setBackgroundColor(getResources().getColor(R.color.purple_700));
     }
 
     private void uploadData() {
