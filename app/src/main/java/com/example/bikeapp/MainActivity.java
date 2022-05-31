@@ -18,6 +18,7 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -111,10 +112,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             if (isTracking) {
                 tripID++;
                 Log.d(TAG, "TRACKING STARTED");
+                getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             } else {
                 // TODO: Move this to other side and test it
                 writePrefs();
                 Log.d(TAG, "TRACKING ENDED");
+                getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             }
         });
 
