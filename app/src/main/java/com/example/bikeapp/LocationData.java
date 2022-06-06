@@ -1,7 +1,6 @@
 package com.example.bikeapp;
 
 import androidx.room.Entity;
-import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 
 import java.util.Locale;
@@ -26,7 +25,11 @@ public class LocationData extends DataInstance {
         return String.format(Locale.US, location_temp, user_id, timestamp, tripID, latitude, longitude);
     }
 
-    public int delete(MyDao myDao) {
+    public int delete(TrackingDao myDao) {
         return myDao.deleteLocation(this);
+    }
+
+    public void insert(TrackingDao myDao) {
+        myDao.insertLocation(this);
     }
 }

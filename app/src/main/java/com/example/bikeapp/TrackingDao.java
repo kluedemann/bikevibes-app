@@ -2,6 +2,7 @@ package com.example.bikeapp;
 
 import android.location.Location;
 
+import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Delete;
 import androidx.room.Insert;
@@ -11,7 +12,7 @@ import androidx.room.Query;
 import java.util.List;
 
 @Dao
-public interface MyDao {
+public interface TrackingDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertLocation(LocationData loc);
 

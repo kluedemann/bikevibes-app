@@ -1,10 +1,6 @@
 package com.example.bikeapp;
 
-import android.hardware.SensorEvent;
-
-import androidx.annotation.NonNull;
 import androidx.room.Entity;
-import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 
 import java.util.Locale;
@@ -31,7 +27,11 @@ public class AccelerometerData extends DataInstance {
         return String.format(Locale.US, accel_temp, user_id, timestamp, tripID, x, y, z);
     }
 
-    public int delete(MyDao myDao) {
+    public int delete(TrackingDao myDao) {
         return myDao.deleteAccel(this);
+    }
+
+    public void insert(TrackingDao myDao) {
+        myDao.insertAccel(this);
     }
 }

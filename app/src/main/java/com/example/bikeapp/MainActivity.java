@@ -3,6 +3,7 @@ package com.example.bikeapp;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.app.ActivityCompat;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.room.Room;
 
 import android.Manifest;
@@ -44,9 +45,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private Sensor mAccelerometer;
     private TextView[] dataViews;
     private TextView[] locationViews;
-    private MyDao myDao;
+    private TrackingViewModel mViewModel;
     private ExecutorService executorService;
-    private boolean isTracking = false;
+//    private TrackingDao myDao;
+//    private boolean isTracking = false;
     private int numUploaded;
     private int numResponses;
     private int numToUpload;
@@ -59,6 +61,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        mViewModel = new ViewModelProvider(this).get(TrackingViewModel.class);
+        mViewModel.getLoc().observe(this, this::setLocationText);
+        mViewModel.getAccel().observe(this, this::setAccelText);
 
         // Get user/trip ids
         SharedPreferences sharedPref = getPreferences(Context.MODE_PRIVATE);
@@ -96,11 +102,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         locationViews[1] = findViewById(R.id.longitude_data);
 
         // Enable location tracking
+        // Check if permissions have been granted, request them if not
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: ASSUMES PERMISSIONS ARE ALWAYS ACCEPTED
+            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+        }
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
         // Create the database and Dao
-        AppDatabase db = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, "bike.db").build();
-        myDao = db.myDao();
+        //AppDatabase db = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, "bike.db").build();
+        //myDao = db.myDao();
 
         // Create background thread to handle DB operations
         executorService = Executors.newFixedThreadPool(1);
@@ -108,8 +120,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // Handle Tracking switch
         SwitchCompat mySwitch = findViewById(R.id.tracking_switch);
         mySwitch.setOnCheckedChangeListener((compoundButton, b) -> {
-            isTracking = b;
-            if (isTracking) {
+            mViewModel.setTracking(b);
+            if (mViewModel.getTracking()) {
                 tripID++;
                 Log.d(TAG, "TRACKING STARTED");
                 getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -150,18 +162,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // Begin tracking accelerometer again
         mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
 
-        // Check if permissions have been granted, request them if not
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: ASSUMES PERMISSIONS ARE ALWAYS ACCEPTED
-            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
-        }
-
         // TODO: Still crashes if you disable location while app is open (use BroadcastReceiver?)
         // Begin location tracking if it is enabled
         final int MIN_DELAY = 5 * 1000;
         final int MIN_DIST = 10;
-        if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+        if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, MIN_DELAY, MIN_DIST, this);
         }
 
@@ -183,47 +188,68 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     public void onSensorChanged(SensorEvent event) {
         // TODO: Differentiate between accelerometer and linear acceleration
-        updateAccel(event.values);
+        Date date = new Date();
+        AccelerometerData acc = new AccelerometerData(date.getTime(), event.values[0], event.values[1], event.values[2], tripID);
+        mViewModel.setAccel(acc);
+        //updateAccel(event.values);
     }
 
     public void onLocationChanged(Location loc) {
-        updateLocation(loc.getLatitude(), loc.getLongitude());
-    }
-
-    private void updateAccel(float[] values) {
-        // Track accelerometer values and upload to local database
-        // values - the x, y, and z components of acceleration in m/s^2
-
-        // Update accelerometer text boxes
         Date date = new Date();
-        for (int i = 0; i < 3; i++) {
-            dataViews[i].setText(String.format(Locale.getDefault(), "%.2f", values[i]));
-        }
-        //Log.d(TAG, String.format("ACCELEROMETER: %f, %f, %f, %d", values[0], values[1], values[2], date.getTime()));
+        LocationData locData = new LocationData(date.getTime(), loc.getLatitude(), loc.getLongitude(), tripID);
+        mViewModel.setLoc(locData);
+        //updateLocation(loc.getLatitude(), loc.getLongitude());
+    }
 
-        // Store Data in local database
-        if (isTracking) {
-            AccelerometerData accelData = new AccelerometerData(date.getTime(), values[0], values[1], values[2], tripID);
-            executorService.execute(() -> myDao.insertAccel(accelData));
+    private void setAccelText(AccelerometerData acc) {
+        if (acc != null) {
+            dataViews[0].setText(String.format(Locale.getDefault(),"%.2f", acc.x));
+            dataViews[1].setText(String.format(Locale.getDefault(),"%.2f", acc.y));
+            dataViews[2].setText(String.format(Locale.getDefault(),"%.2f", acc.z));
         }
     }
 
-    private void updateLocation(double latitude, double longitude) {
-        // Track GPS coordinates and upload to local database
-        // latitude, longitude - the coordinates received from the GPS
-
-        // Update location text boxes
-        Date date = new Date();
-        locationViews[0].setText(String.format(Locale.getDefault(),"%f", latitude));
-        locationViews[1].setText(String.format(Locale.getDefault(), "%f", longitude));
-        //Log.d(TAG, String.format("LOCATION: %f, %f, %d", latitude, longitude, date.getTime()));
-
-        // Store Data in Local Database
-        if (isTracking) {
-            LocationData locData = new LocationData(date.getTime(), latitude, longitude, tripID);
-            executorService.execute(() -> myDao.insertLocation(locData));
+    private void setLocationText(LocationData loc) {
+        if (loc != null) {
+            locationViews[0].setText(String.format(Locale.getDefault(),"%f", loc.latitude));
+            locationViews[1].setText(String.format(Locale.getDefault(),"%f", loc.longitude));
         }
     }
+
+//    private void updateAccel(float[] values) {
+//        // Track accelerometer values and upload to local database
+//        // values - the x, y, and z components of acceleration in m/s^2
+//
+//        // Update accelerometer text boxes
+//        Date date = new Date();
+//        for (int i = 0; i < 3; i++) {
+//            dataViews[i].setText(String.format(Locale.getDefault(), "%.2f", values[i]));
+//        }
+//        //Log.d(TAG, String.format("ACCELEROMETER: %f, %f, %f, %d", values[0], values[1], values[2], date.getTime()));
+//
+//        // Store Data in local database
+//        if (isTracking) {
+//            AccelerometerData accelData = new AccelerometerData(date.getTime(), values[0], values[1], values[2], tripID);
+//            executorService.execute(() -> myDao.insertAccel(accelData));
+//        }
+//    }
+
+//    private void updateLocation(double latitude, double longitude) {
+//        // Track GPS coordinates and upload to local database
+//        // latitude, longitude - the coordinates received from the GPS
+//
+//        // Update location text boxes
+//        Date date = new Date();
+//        locationViews[0].setText(String.format(Locale.getDefault(),"%f", latitude));
+//        locationViews[1].setText(String.format(Locale.getDefault(), "%f", longitude));
+//        //Log.d(TAG, String.format("LOCATION: %f, %f, %d", latitude, longitude, date.getTime()));
+//
+//        // Store Data in Local Database
+//        if (isTracking) {
+//            LocationData locData = new LocationData(date.getTime(), latitude, longitude, tripID);
+//            executorService.execute(() -> myDao.insertLocation(locData));
+//        }
+//    }
 
     @Override
     public void onStatusChanged(String provider, int status, Bundle extras) {
@@ -245,7 +271,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             boolean isSuccess = response.optBoolean("success", false);
             requestCompleted(isSuccess);
             if (isSuccess) {
-                executorService.execute(() -> data.delete(myDao));
+                mViewModel.delete(data);
             }
         }, error -> {
             // onErrorResponse: Called upon receiving an error response
@@ -257,7 +283,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 Toast.makeText(MainActivity.this, "Connection timed out", Toast.LENGTH_SHORT).show();
             } else if (error instanceof ServerError && error.networkResponse.statusCode == 500) {
                 // Discard local copy if server has duplicate data
-                executorService.execute(() -> data.delete(myDao));
+                mViewModel.delete(data);
             }
             requestCompleted(false);
         });
@@ -293,8 +319,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // Query data from the local database and upload it to the server
 
         // Query data
-        List<LocationData> locations = myDao.getLocation();
-        List<AccelerometerData> accel_readings = myDao.getAccel();
+        List<LocationData> locations = mViewModel.getAllLoc();
+        List<AccelerometerData> accel_readings = mViewModel.getAllAccel();
 
         // Initialize counters
         numToUpload = locations.size() + accel_readings.size();
