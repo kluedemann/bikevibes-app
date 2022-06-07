@@ -4,10 +4,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.app.ActivityCompat;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.room.Room;
 
 import android.Manifest;
+import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.hardware.Sensor;
@@ -18,6 +20,7 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.util.Log;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -38,7 +41,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class MainActivity extends AppCompatActivity implements SensorEventListener, LocationListener {
+public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     private SensorManager mSensorManager;
     private LocationManager locationManager;
@@ -56,6 +59,22 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private RequestQueue queue;
     private String userID;
     private int tripID;
+    private TrackingService mService;
+    private boolean mBound;
+
+    private final ServiceConnection connection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
+            TrackingService.LocalBinder binder = (TrackingService.LocalBinder) iBinder;
+            mService = binder.getService();
+            mBound = true;
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName componentName) {
+            mBound = false;
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,6 +84,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         mViewModel = new ViewModelProvider(this).get(TrackingViewModel.class);
         mViewModel.getLoc().observe(this, this::setLocationText);
         mViewModel.getAccel().observe(this, this::setAccelText);
+
+
 
         // Get user/trip ids
         SharedPreferences sharedPref = getPreferences(Context.MODE_PRIVATE);
@@ -79,11 +100,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
 
         // Get Accelerometer Sensor
-        mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
-        if (mAccelerometer == null) {
-            mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        }
+//        mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+//        mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
+//        if (mAccelerometer == null) {
+//            mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+//        }
 
         /*  List Sensors
         List<Sensor> sensors = mSensorManager.getSensorList(Sensor.TYPE_ALL);
@@ -108,7 +129,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             // TODO: ASSUMES PERMISSIONS ARE ALWAYS ACCEPTED
             ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
         }
-        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        //locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
         // Create the database and Dao
         //AppDatabase db = Room.databaseBuilder(getApplicationContext(), AppDatabase.class, "bike.db").build();
@@ -120,16 +141,18 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // Handle Tracking switch
         SwitchCompat mySwitch = findViewById(R.id.tracking_switch);
         mySwitch.setOnCheckedChangeListener((compoundButton, b) -> {
-            mViewModel.setTracking(b);
-            if (mViewModel.getTracking()) {
-                tripID++;
+            mService.setTracking(b);
+            if (mService.getTracking()) {
+                Intent intent = new Intent(getApplicationContext(), TrackingService.class);
+                getApplicationContext().startService(intent);
+                mService.setTripID(++tripID);
                 Log.d(TAG, "TRACKING STARTED");
-                getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                //getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             } else {
                 // TODO: Move this to other side and test it
                 writePrefs();
                 Log.d(TAG, "TRACKING ENDED");
-                getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                //getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             }
         });
 
@@ -159,16 +182,22 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     protected void onResume() {
         super.onResume();
 
-        // Begin tracking accelerometer again
-        mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+//        // Begin tracking accelerometer again
+//        mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+//
+//        // TODO: Still crashes if you disable location while app is open (use BroadcastReceiver?)
+//        // Begin location tracking if it is enabled
+//        final int MIN_DELAY = 5 * 1000;
+//        final int MIN_DIST = 10;
+//        if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+//            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, MIN_DELAY, MIN_DIST, this);
+//        }
 
-        // TODO: Still crashes if you disable location while app is open (use BroadcastReceiver?)
-        // Begin location tracking if it is enabled
-        final int MIN_DELAY = 5 * 1000;
-        final int MIN_DIST = 10;
-        if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, MIN_DELAY, MIN_DIST, this);
+        if (!mBound) {
+            Intent intent = new Intent(getApplicationContext(), TrackingService.class);
+            getApplicationContext().bindService(intent, connection, Context.BIND_AUTO_CREATE);
         }
+
 
         uploadButton.setEnabled(true);
     }
@@ -176,8 +205,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     protected void onPause() {
         // Stop all background processes upon app being paused
         super.onPause();
-        mSensorManager.unregisterListener(this);
-        locationManager.removeUpdates(this);
+        if (mBound) {
+            getApplicationContext().unbindService(connection);
+            mBound = false;
+        }
+//        mSensorManager.unregisterListener(this);
+//        locationManager.removeUpdates(this);
         queue.cancelAll(TAG);
         writePrefs();
     }
@@ -251,7 +284,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 //        }
 //    }
 
-    @Override
+    //@Override
     public void onStatusChanged(String provider, int status, Bundle extras) {
         // Called upon LocationListener status changing
         // Removes error on old API

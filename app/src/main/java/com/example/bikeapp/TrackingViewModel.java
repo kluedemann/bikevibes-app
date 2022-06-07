@@ -10,39 +10,35 @@ import java.util.List;
 
 public class TrackingViewModel extends AndroidViewModel {
 
-    private DataRepository mRepository;
-
-    private final MutableLiveData<AccelerometerData> mAccel;
-    private final MutableLiveData<LocationData> mLoc;
+    private final DataRepository mRepository;
     private boolean isTracking = false;
 
     public TrackingViewModel(Application application) {
         super(application);
-        mRepository = new DataRepository(application);
-        mAccel = new MutableLiveData<>();
-        mLoc = new MutableLiveData<>();
+        BikeApp app = (BikeApp) application;
+        mRepository = app.getRepository();
     }
 
     public void setAccel(AccelerometerData acc) {
-        mAccel.setValue(acc);
+        mRepository.setAccel(acc);
         if (isTracking) {
             insert(acc);
         }
     }
 
     public void setLoc(LocationData loc) {
-        mLoc.setValue(loc);
+        mRepository.setLoc(loc);
         if (isTracking) {
             insert(loc);
         }
     }
 
     LiveData<AccelerometerData> getAccel() {
-        return mAccel;
+        return mRepository.getAccel();
     }
 
     LiveData<LocationData> getLoc() {
-        return mLoc;
+        return mRepository.getLoc();
     }
 
     public void insert(DataInstance dataInstance) {
@@ -62,11 +58,11 @@ public class TrackingViewModel extends AndroidViewModel {
     }
 
     List<AccelerometerData> getAllAccel() {
-        return mRepository.getAccel();
+        return mRepository.getAccelList();
     }
 
     List<LocationData> getAllLoc() {
-        return mRepository.getLoc();
+        return mRepository.getLocList();
     }
 
 
