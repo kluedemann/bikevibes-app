@@ -73,16 +73,14 @@ public class MainActivity extends AppCompatActivity {
         mViewModel.getLoc().observe(this, this::setLocationText);
         mViewModel.getAccel().observe(this, this::setAccelText);
 
-
-
         // Get user/trip ids
-        SharedPreferences sharedPref = getPreferences(Context.MODE_PRIVATE);
+        String PREFS = "com.example.bikeapp.TRACKING_INFO";
+        SharedPreferences sharedPref = getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         userID = sharedPref.getString("user_id", null);
 
         // Initialize user/trip ids on first opening of app
         if (userID == null) {
             userID = UUID.randomUUID().toString();
-            //userID = "test";
             writePrefs();
         }
 
@@ -264,10 +262,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void writePrefs() {
-        SharedPreferences sharedPref = getPreferences(Context.MODE_PRIVATE);
+        String PREFS = "com.example.bikeapp.TRACKING_INFO";
+        SharedPreferences sharedPref = getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString("user_id", userID);
-        //editor.putInt("trip_id", tripID);
         editor.apply();
     }
 }
