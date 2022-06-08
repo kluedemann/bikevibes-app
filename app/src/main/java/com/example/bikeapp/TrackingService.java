@@ -4,10 +4,10 @@ import android.Manifest;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -22,8 +22,8 @@ import android.os.IBinder;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
+import androidx.core.content.ContextCompat;
 
 import java.util.Date;
 
@@ -74,13 +74,7 @@ public class TrackingService extends Service implements SensorEventListener, Loc
     @Override
     public IBinder onBind(Intent intent) {
         Log.d(TAG, "Bound!");
-        mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
-
-        final int MIN_DELAY = 5 * 1000;
-        final int MIN_DIST = 10;
-        if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, MIN_DELAY, MIN_DIST, this);
-        }
+        startTracking();
         return binder;
     }
 
@@ -93,6 +87,10 @@ public class TrackingService extends Service implements SensorEventListener, Loc
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+
+        String PREFS = "com.example.bikeapp.TRACKING_INFO";
+        SharedPreferences sharedPref = getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        tripID = sharedPref.getInt("trip_id", 0);
 
         NotificationManager mNotificationManager =
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
@@ -109,25 +107,17 @@ public class TrackingService extends Service implements SensorEventListener, Loc
         return isTracking;
     }
 
-    void setTracking(boolean tracking) {
-        Log.d(TAG, "Tracking: " + tracking);
-        isTracking = tracking;
-        if (!tracking) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                stopForeground(STOP_FOREGROUND_REMOVE);
-            }
+    void disableTracking() {
+        Log.d(TAG, "Tracking stopped!");
+        isTracking = false;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            stopForeground(STOP_FOREGROUND_REMOVE);
         }
+        writePrefs();
     }
 
     public int onStartCommand(Intent intent, int flags, int startID) {
         Log.d(TAG, "Started!");
-        mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
-
-        final int MIN_DELAY = 5 * 1000;
-        final int MIN_DIST = 10;
-        if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, MIN_DELAY, MIN_DIST, this);
-        }
 
         Notification notification = new NotificationCompat.Builder(getApplicationContext(), "1")
                 .setSmallIcon(R.mipmap.ic_launcher) // notification icon
@@ -135,6 +125,10 @@ public class TrackingService extends Service implements SensorEventListener, Loc
                 .setContentText("Tracking data")// message for notification
                 .setAutoCancel(true).build(); // clear notification after click
         startForeground(1, notification);
+
+        tripID++;
+        isTracking = true;
+        startTracking();
 
         return START_NOT_STICKY;
     }
@@ -145,6 +139,7 @@ public class TrackingService extends Service implements SensorEventListener, Loc
         if (!isTracking) {
             mSensorManager.unregisterListener(this);
             locationManager.removeUpdates(this);
+            writePrefs();
             Log.d(TAG, "Stopped!");
             stopSelf();
         }
@@ -154,22 +149,30 @@ public class TrackingService extends Service implements SensorEventListener, Loc
     public void onDestroy() {
         mSensorManager.unregisterListener(this);
         locationManager.removeUpdates(this);
-    }
-
-    public void setTripID(int tripID) {
-        this.tripID = tripID;
+        writePrefs();
     }
 
     public void onRebind(Intent intent) {
         Log.d(TAG, "Rebound!");
+        startTracking();
+    }
 
-        mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
-
+    private void startTracking() {
         final int MIN_DELAY = 5 * 1000;
         final int MIN_DIST = 10;
-        if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+
+        mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+        if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) && ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, MIN_DELAY, MIN_DIST, this);
         }
+    }
+
+    private void writePrefs() {
+        String PREFS = "com.example.bikeapp.TRACKING_INFO";
+        SharedPreferences sharedPref = getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putInt("trip_id", tripID);
+        editor.apply();
     }
 
 }
