@@ -37,11 +37,29 @@ public class TrackingService extends Service implements SensorEventListener, Loc
     private LocationManager locationManager;
     private final IBinder binder = new LocalBinder();
     private DataRepository mRepository;
+    private boolean isLinear = true;
+    private final float[] gravity = new float[3];
 
     @Override
     public void onSensorChanged(SensorEvent event) {
+
+        float[] linear_acceleration = event.values;
         Date date = new Date();
-        AccelerometerData acc = new AccelerometerData(date.getTime(), event.values[0], event.values[1], event.values[2], tripID);
+
+        if (!isLinear) {
+            final float alpha = (float) 0.4;
+
+            // Isolate the force of gravity with the low-pass filter.
+            gravity[0] = alpha * gravity[0] + (1 - alpha) * event.values[0];
+            gravity[1] = alpha * gravity[1] + (1 - alpha) * event.values[1];
+            gravity[2] = alpha * gravity[2] + (1 - alpha) * event.values[2];
+
+            // Remove the gravity contribution with the high-pass filter.
+            linear_acceleration[0] = event.values[0] - gravity[0];
+            linear_acceleration[1] = event.values[1] - gravity[1];
+            linear_acceleration[2] = event.values[2] - gravity[2];
+        }
+        AccelerometerData acc = new AccelerometerData(date.getTime(), linear_acceleration, tripID);
         //Log.d("Service", "Accel");
         mRepository.setAccel(acc);
         if (isTracking) {
@@ -86,6 +104,10 @@ public class TrackingService extends Service implements SensorEventListener, Loc
 
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
+        if (mAccelerometer == null) {
+            isLinear = false;
+            mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        }
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
         String PREFS = "com.example.bikeapp.TRACKING_INFO";
@@ -161,7 +183,9 @@ public class TrackingService extends Service implements SensorEventListener, Loc
         final int MIN_DELAY = 5 * 1000;
         final int MIN_DIST = 10;
 
-        mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+        if (mAccelerometer != null) {
+            mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+        }
         if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) && ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, MIN_DELAY, MIN_DIST, this);
         }
