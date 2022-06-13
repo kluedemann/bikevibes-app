@@ -1,4 +1,4 @@
-package com.example.bikeapp;
+package com.example.bikeapp.db;
 
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;

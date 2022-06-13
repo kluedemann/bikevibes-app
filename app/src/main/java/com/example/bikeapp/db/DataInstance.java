@@ -1,4 +1,4 @@
-package com.example.bikeapp;
+package com.example.bikeapp.db;
 
 public abstract class DataInstance {
 

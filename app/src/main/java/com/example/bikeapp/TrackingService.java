@@ -25,6 +25,9 @@ import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 
+import com.example.bikeapp.db.AccelerometerData;
+import com.example.bikeapp.db.LocationData;
+
 import java.util.Date;
 
 public class TrackingService extends Service implements SensorEventListener, LocationListener {
@@ -118,9 +121,9 @@ public class TrackingService extends Service implements SensorEventListener, Loc
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel("1",
-                    "Service Notification",
+                    "Tracking",
                     NotificationManager.IMPORTANCE_DEFAULT);
-            channel.setDescription("Test Description");
+            channel.setDescription("Indicates that the app is currently tracking your GPS location and accelerometer data. Disable the tracking switch in the app to stop.");
             mNotificationManager.createNotificationChannel(channel);
         }
     }
@@ -172,6 +175,7 @@ public class TrackingService extends Service implements SensorEventListener, Loc
         mSensorManager.unregisterListener(this);
         locationManager.removeUpdates(this);
         writePrefs();
+        Log.d(TAG, "Destroyed!");
     }
 
     public void onRebind(Intent intent) {

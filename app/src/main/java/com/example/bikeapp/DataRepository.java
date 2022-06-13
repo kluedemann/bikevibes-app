@@ -1,17 +1,20 @@
 package com.example.bikeapp;
 
-import android.app.Application;
-import android.provider.ContactsContract;
-
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
+
+import com.example.bikeapp.db.AccelerometerData;
+import com.example.bikeapp.db.AppDatabase;
+import com.example.bikeapp.db.DataInstance;
+import com.example.bikeapp.db.LocationData;
+import com.example.bikeapp.db.TrackingDao;
 
 import java.util.List;
 
 public class DataRepository {
     private static DataRepository sInstance;
 
-    private TrackingDao myDao;
+    private final TrackingDao myDao;
     private final MutableLiveData<AccelerometerData> mAccel = new MutableLiveData<>();
     private final MutableLiveData<LocationData> mLocation = new MutableLiveData<>();
 
@@ -31,15 +34,11 @@ public class DataRepository {
     }
 
     void insert(DataInstance dataInstance) {
-        AppDatabase.databaseExecutor.execute(() -> {
-            dataInstance.insert(myDao);
-        });
+        AppDatabase.getExecutor().execute(() -> dataInstance.insert(myDao));
     }
 
     void delete(DataInstance dataInstance) {
-        AppDatabase.databaseExecutor.execute(() -> {
-            dataInstance.delete(myDao);
-        });
+        AppDatabase.getExecutor().execute(() -> dataInstance.delete(myDao));
     }
 
     LiveData<AccelerometerData> getAccel() {

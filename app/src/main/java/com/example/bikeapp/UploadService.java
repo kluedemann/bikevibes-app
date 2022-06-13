@@ -20,6 +20,9 @@ import com.android.volley.ServerError;
 import com.android.volley.TimeoutError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.example.bikeapp.db.AccelerometerData;
+import com.example.bikeapp.db.DataInstance;
+import com.example.bikeapp.db.LocationData;
 
 import java.util.List;
 import java.util.UUID;
@@ -63,10 +66,10 @@ public class UploadService extends Service {
         NotificationManager mNotificationManager =
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel("1",
-                    "Service Notification",
+            NotificationChannel channel = new NotificationChannel("2",
+                    "Upload",
                     NotificationManager.IMPORTANCE_DEFAULT);
-            channel.setDescription("Test Description");
+            channel.setDescription("Appears when data is being uploaded to the web server.");
             mNotificationManager.createNotificationChannel(channel);
         }
 
@@ -213,5 +216,12 @@ public class UploadService extends Service {
 
     public static String getAction() {
         return ACTION_UPLOAD;
+    }
+
+    @Override
+    public void onDestroy() {
+        Log.d(TAG, "Destroyed!");
+        queue.cancelAll(TAG);
+        uploadExecutor.shutdown();
     }
 }

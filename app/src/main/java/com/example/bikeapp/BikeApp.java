@@ -2,6 +2,8 @@ package com.example.bikeapp;
 
 import android.app.Application;
 
+import com.example.bikeapp.db.AppDatabase;
+
 public class BikeApp extends Application {
 
     public AppDatabase getDatabase() {
