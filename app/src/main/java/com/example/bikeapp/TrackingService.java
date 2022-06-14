@@ -2,8 +2,6 @@ package com.example.bikeapp;
 
 import android.Manifest;
 import android.app.Notification;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -43,6 +41,125 @@ public class TrackingService extends Service implements SensorEventListener, Loc
     private boolean isLinear = true;
     private final float[] gravity = new float[3];
 
+    // Binder class to return the Service
+    public class LocalBinder extends Binder {
+        TrackingService getService() {
+            return TrackingService.this;
+        }
+    }
+
+    /**
+     * Initialize the service when it is first created.
+     * Get the repository, accelerometer sensor, LocationManager, and current tripID.
+     */
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        BikeApp app = (BikeApp) getApplication();
+        mRepository = app.getRepository();
+
+        mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
+        if (mAccelerometer == null) {
+            isLinear = false;
+            mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        }
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+
+        String PREFS = getString(R.string.preference_file_key);
+        SharedPreferences sharedPref = getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        tripID = sharedPref.getInt("trip_id", 0);
+    }
+
+    /**
+     * Begin tracking data when bound to by an activity.
+     * @param intent - the message to bind to the service
+     * @return binder - used to get the service object
+     */
+    @Override
+    public IBinder onBind(Intent intent) {
+        Log.d(TAG, "Bound!");
+        startTracking();
+        return binder;
+    }
+
+    /**
+     * Begin storing data and start activity in the foreground.
+     * Called from startService when the tracking switch is toggled.
+     * @param intent - the message to start the service
+     * @param flags - additional data about the start request
+     * @param startID - can be used to distinguish between service tasks
+     * @return START_NOT_STICKY - indicates that the system should not recreate the service
+     */
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startID) {
+        Log.d(TAG, "Started!");
+
+        Notification notification = new NotificationCompat.Builder(getApplicationContext(), "1")
+                .setSmallIcon(R.mipmap.ic_launcher) // notification icon
+                .setContentTitle("BikeApp") // title for notification
+                .setContentText("Tracking data")// message for notification
+                .setAutoCancel(true).build(); // clear notification after click
+        startForeground(1, notification);
+
+        tripID++;
+        isTracking = true;
+        startTracking();
+
+        return START_NOT_STICKY;
+    }
+
+    /**
+     * Start tracking when activity binds to service again.
+     * Called when activity has already unbound from the service.
+     * @param intent - the message to rebind to the service
+     */
+    @Override
+    public void onRebind(Intent intent) {
+        Log.d(TAG, "Rebound!");
+        startTracking();
+    }
+
+    /**
+     * Unbind the activity from the service.
+     * If not storing data, unregister listeners and stop service.
+     * @param intent - the message to unbind from the service
+     * @return - true - flag that indicates that onRebind will be called
+     * if the activity binds to the service again
+     */
+    @Override
+    public boolean onUnbind(Intent intent) {
+        Log.d(TAG, "Unbound!");
+        if (!isTracking) {
+            mSensorManager.unregisterListener(this);
+            locationManager.removeUpdates(this);
+            writePrefs();
+            Log.d(TAG, "Stopped!");
+            stopSelf();
+        }
+        return true;
+    }
+
+    /**
+     * Unregister listeners and remove updates.
+     * Called when the service is destroyed by the system.
+     */
+    @Override
+    public void onDestroy() {
+        Log.d(TAG, "Destroyed!");
+        mSensorManager.unregisterListener(this);
+        locationManager.removeUpdates(this);
+        writePrefs();
+    }
+
+    /**
+     * Update the accelerometer records with the new sensor reading.
+     * If storing data, insert the record into the database.
+     * If using raw accelerometer data, filter out gravity.
+     * Otherwise, assume that linear acceleration is used, which filters gravity automatically.
+     * Called when a SensorEvent is received from the system.
+     * @param event - the SensorEvent triggered by the accelerometer
+     */
     @Override
     public void onSensorChanged(SensorEvent event) {
 
@@ -70,11 +187,23 @@ public class TrackingService extends Service implements SensorEventListener, Loc
         }
     }
 
+    /**
+     * Called when a Sensor reports an accuracy change.
+     * Currently not implemented.
+     * @param sensor - the sensor whose accuracy changed
+     * @param i - the new accuracy of the sensor (SensorManager.SENSOR_STATUS_* flag)
+     */
     @Override
     public void onAccuracyChanged(Sensor sensor, int i) {
         // no-op
     }
 
+    /**
+     * Update the current location when an update is received from the GPS.
+     * If storing data, insert it into the database.
+     * Called when the LocationManager receives an update from the GPS
+     * @param loc- the new location; contains latitude and longitude
+     */
     @Override
     public void onLocationChanged(@NonNull Location loc) {
         Date date = new Date();
@@ -86,103 +215,9 @@ public class TrackingService extends Service implements SensorEventListener, Loc
         }
     }
 
-    public class LocalBinder extends Binder {
-        TrackingService getService() {
-            return TrackingService.this;
-        }
-    }
-
-    @Override
-    public IBinder onBind(Intent intent) {
-        Log.d(TAG, "Bound!");
-        startTracking();
-        return binder;
-    }
-
-    @Override
-    public void onCreate() {
-        super.onCreate();
-        BikeApp app = (BikeApp) getApplication();
-        mRepository = app.getRepository();
-
-        mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
-        if (mAccelerometer == null) {
-            isLinear = false;
-            mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        }
-        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-
-        String PREFS = "com.example.bikeapp.TRACKING_INFO";
-        SharedPreferences sharedPref = getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-        tripID = sharedPref.getInt("trip_id", 0);
-
-        NotificationManager mNotificationManager =
-                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel("1",
-                    "Tracking",
-                    NotificationManager.IMPORTANCE_DEFAULT);
-            channel.setDescription("Indicates that the app is currently tracking your GPS location and accelerometer data. Disable the tracking switch in the app to stop.");
-            mNotificationManager.createNotificationChannel(channel);
-        }
-    }
-
-    boolean getTracking() {
-        return isTracking;
-    }
-
-    void disableTracking() {
-        Log.d(TAG, "Tracking stopped!");
-        isTracking = false;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            stopForeground(STOP_FOREGROUND_REMOVE);
-        }
-        writePrefs();
-    }
-
-    public int onStartCommand(Intent intent, int flags, int startID) {
-        Log.d(TAG, "Started!");
-
-        Notification notification = new NotificationCompat.Builder(getApplicationContext(), "1")
-                .setSmallIcon(R.mipmap.ic_launcher) // notification icon
-                .setContentTitle("BikeApp") // title for notification
-                .setContentText("Tracking data")// message for notification
-                .setAutoCancel(true).build(); // clear notification after click
-        startForeground(1, notification);
-
-        tripID++;
-        isTracking = true;
-        startTracking();
-
-        return START_NOT_STICKY;
-    }
-
-    @Override
-    public boolean onUnbind(Intent intent) {
-        Log.d(TAG, "Unbound!");
-        if (!isTracking) {
-            mSensorManager.unregisterListener(this);
-            locationManager.removeUpdates(this);
-            writePrefs();
-            Log.d(TAG, "Stopped!");
-            stopSelf();
-        }
-        return true;
-    }
-
-    public void onDestroy() {
-        mSensorManager.unregisterListener(this);
-        locationManager.removeUpdates(this);
-        writePrefs();
-        Log.d(TAG, "Destroyed!");
-    }
-
-    public void onRebind(Intent intent) {
-        Log.d(TAG, "Rebound!");
-        startTracking();
-    }
-
+    /**
+     * Register listeners for accelerometer and location updates.
+     */
     private void startTracking() {
         final int MIN_DELAY = 5 * 1000;
         final int MIN_DIST = 10;
@@ -195,6 +230,21 @@ public class TrackingService extends Service implements SensorEventListener, Loc
         }
     }
 
+    /**
+     * Stop storing data and remove the service from the foreground.
+     */
+    void disableTracking() {
+        Log.d(TAG, "Tracking stopped!");
+        isTracking = false;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            stopForeground(STOP_FOREGROUND_REMOVE);
+        }
+        writePrefs();
+    }
+
+    /**
+     * Update the tripID stored in the SharedPreferences file.
+     */
     private void writePrefs() {
         String PREFS = "com.example.bikeapp.TRACKING_INFO";
         SharedPreferences sharedPref = getSharedPreferences(PREFS, Context.MODE_PRIVATE);
@@ -203,4 +253,7 @@ public class TrackingService extends Service implements SensorEventListener, Loc
         editor.apply();
     }
 
+    boolean getTracking() {
+        return isTracking;
+    }
 }

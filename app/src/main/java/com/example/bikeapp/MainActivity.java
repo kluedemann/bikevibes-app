@@ -26,13 +26,8 @@ import com.example.bikeapp.db.LocationData;
 import java.util.Locale;
 
 /**
- * MainActivity Class
  * Holds the UI elements for the app. Created on app startup.
  * Binds to and starts Services and launches other fragments/activities if needed.
- *
- * @author Kai Luedemann
- * @version 1.0
- * @since 2022-06-13
  */
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
@@ -42,47 +37,48 @@ public class MainActivity extends AppCompatActivity {
     private TrackingService trackingService;
     private boolean isBound;
 
+    // Receiver that listens for when the upload task is finished
     private final BroadcastReceiver bReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             if (intent.getAction().equals(UploadService.getAction())) {
-                boolean success = intent.getBooleanExtra("success", false);
-                if (success) {
-                    int total = intent.getIntExtra("total", 0);
-                    int uploaded = intent.getIntExtra("uploaded", 0);
-                    String toast_text = String.format(Locale.getDefault(), "Uploaded rows: %d/%d", uploaded, total);
-                    Toast.makeText(MainActivity.this, toast_text, Toast.LENGTH_SHORT).show();
-                } else {
-                    String message = intent.getStringExtra("message");
-                    Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
-                }
-                uploadButton.setEnabled(true);
+                uploadComplete(intent);
             }
         }
     };
 
+    // Provides callbacks for when TrackingService is bound/unbound
     private final ServiceConnection connection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
+            // Get service object
             TrackingService.LocalBinder binder = (TrackingService.LocalBinder) iBinder;
             trackingService = binder.getService();
             isBound = true;
 
+            // Set switch state
             SwitchCompat mySwitch = findViewById(R.id.tracking_switch);
             mySwitch.setChecked(trackingService.getTracking());
         }
 
         @Override
         public void onServiceDisconnected(ComponentName componentName) {
+            // Only called if unbound prematurely (not using unbind())
             isBound = false;
         }
     };
 
+    /**
+     * Called when the activity is first launched. Setup UI elements and ViewModel.
+     *
+     * @param savedInstanceState - the saved app state to load
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Setup ViewModel and live data
         TrackingViewModel mViewModel = new ViewModelProvider(this).get(TrackingViewModel.class);
         mViewModel.getLoc().observe(this, this::setLocationText);
         mViewModel.getAccel().observe(this, this::setAccelText);
@@ -96,22 +92,20 @@ public class MainActivity extends AppCompatActivity {
         locationViews[0] = findViewById(R.id.latitude_data);
         locationViews[1] = findViewById(R.id.longitude_data);
 
-        // Enable location tracking
-        // Check if permissions have been granted, request them if not
+        // Request location permissions
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
                 && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: ASSUMES PERMISSIONS ARE ALWAYS ACCEPTED
             ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
         }
 
         // Handle Tracking switch
         SwitchCompat mySwitch = findViewById(R.id.tracking_switch);
-        mySwitch.setOnCheckedChangeListener((compoundButton, b) -> {
-
-            if (b && !trackingService.getTracking()) {
+        mySwitch.setOnCheckedChangeListener((compoundButton, isActive) -> {
+            if (isActive && !trackingService.getTracking()) {
+                // Start TrackingService
                 Intent intent = new Intent(getApplicationContext(), TrackingService.class);
                 getApplicationContext().startService(intent);
-            } else if (!b && trackingService.getTracking()){
+            } else if (!isActive && trackingService.getTracking()) {
                 trackingService.disableTracking();
             }
         });
@@ -119,50 +113,99 @@ public class MainActivity extends AppCompatActivity {
         // Handle Upload Button
         uploadButton = findViewById(R.id.upload_button);
         uploadButton.setOnClickListener(view -> {
-            // Get data from local DB and upload to server
             uploadButton.setEnabled(false);
+
+            // Start UploadService
             Intent intent = new Intent(getApplicationContext(), UploadService.class);
             getApplicationContext().startService(intent);
         });
     }
 
+    /**
+     * Called whenever the app enters the foreground.
+     * Starts tracking data and listening for broadcasts.
+     */
+    @Override
     protected void onResume() {
         super.onResume();
 
-        LocalBroadcastManager.getInstance(this).registerReceiver(bReceiver, new IntentFilter(UploadService.getAction()));
-
         if (!isBound) {
+            // Bind TrackingService
             Intent intent = new Intent(getApplicationContext(), TrackingService.class);
             getApplicationContext().bindService(intent, connection, Context.BIND_AUTO_CREATE);
         }
 
+        LocalBroadcastManager.getInstance(getApplicationContext())
+                .registerReceiver(bReceiver, new IntentFilter(UploadService.getAction()));
         uploadButton.setEnabled(true);
     }
 
+    /**
+     * Called whenever the app leaves the foreground.
+     * Stops tracking data and listening for broadcasts.
+     */
     protected void onPause() {
-        // Stop all background processes upon app being paused
         super.onPause();
 
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(bReceiver);
-
         if (isBound) {
+            // Unbind TrackingService
             getApplicationContext().unbindService(connection);
             isBound = false;
         }
+
+        LocalBroadcastManager.getInstance(getApplicationContext()).unregisterReceiver(bReceiver);
     }
 
+    /**
+     * Updates the TextViews to display current accelerometer data.
+     * Called by LiveData observer when accelerometer values are updated.
+     *
+     * @param acc - the AccelerometerData to be displayed
+     */
     private void setAccelText(AccelerometerData acc) {
         if (acc != null) {
-            dataViews[0].setText(String.format(Locale.getDefault(),"%.2f", acc.x));
-            dataViews[1].setText(String.format(Locale.getDefault(),"%.2f", acc.y));
-            dataViews[2].setText(String.format(Locale.getDefault(),"%.2f", acc.z));
+            dataViews[0].setText(String.format(Locale.getDefault(), "%.2f", acc.x));
+            dataViews[1].setText(String.format(Locale.getDefault(), "%.2f", acc.y));
+            dataViews[2].setText(String.format(Locale.getDefault(), "%.2f", acc.z));
         }
     }
 
+    /**
+     * Updates the TextViews to display current location data.
+     * Called by LiveData observer when GPS coordinates are updated.
+     *
+     * @param loc - the LocationData to be displayed
+     */
     private void setLocationText(LocationData loc) {
         if (loc != null) {
-            locationViews[0].setText(String.format(Locale.getDefault(),"%f", loc.latitude));
-            locationViews[1].setText(String.format(Locale.getDefault(),"%f", loc.longitude));
+            locationViews[0].setText(String.format(Locale.getDefault(), "%f", loc.latitude));
+            locationViews[1].setText(String.format(Locale.getDefault(), "%f", loc.longitude));
         }
+    }
+
+    /**
+     * Display the appropriate message when UploadService completes.
+     * Called when a broadcast is received from the UploadService.
+     *
+     * @param intent - has extras:
+     *               success - (boolean) whether upload completed successfully
+     *               total - (int) number of rows attempted to upload
+     *               uploaded - (int) number of rows uploaded successfully
+     *               message - (String) message to display if unsuccessful
+     */
+    private void uploadComplete(Intent intent) {
+        boolean success = intent.getBooleanExtra("success", false);
+        if (success) {
+            // Display number of rows uploaded
+            int total = intent.getIntExtra("total", 0);
+            int uploaded = intent.getIntExtra("uploaded", 0);
+            String toast_text = String.format(Locale.getDefault(), "Uploaded rows: %d/%d", uploaded, total);
+            Toast.makeText(getApplicationContext(), toast_text, Toast.LENGTH_SHORT).show();
+        } else {
+            // Display error message
+            String message = intent.getStringExtra("message");
+            Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
+        }
+        uploadButton.setEnabled(true);
     }
 }
