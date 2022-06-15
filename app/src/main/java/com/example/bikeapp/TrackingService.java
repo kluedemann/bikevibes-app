@@ -68,7 +68,7 @@ public class TrackingService extends Service implements SensorEventListener, Loc
 
         String PREFS = getString(R.string.preference_file_key);
         SharedPreferences sharedPref = getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-        tripID = sharedPref.getInt("trip_id", 0);
+        tripID = sharedPref.getInt(getString(R.string.prefs_trip_key), 0);
     }
 
     /**
@@ -95,12 +95,13 @@ public class TrackingService extends Service implements SensorEventListener, Loc
     public int onStartCommand(Intent intent, int flags, int startID) {
         Log.d(TAG, "Started!");
 
-        Notification notification = new NotificationCompat.Builder(getApplicationContext(), "1")
+        final int NOTIFICATION_ID = 1;
+        Notification notification = new NotificationCompat.Builder(getApplicationContext(), getString(R.string.tracking_channel_id))
                 .setSmallIcon(R.mipmap.ic_launcher) // notification icon
-                .setContentTitle("BikeApp") // title for notification
-                .setContentText("Tracking data")// message for notification
+                .setContentTitle(getString(R.string.app_name)) // title for notification
+                .setContentText(getString(R.string.tracking_notification_text))// message for notification
                 .setAutoCancel(true).build(); // clear notification after click
-        startForeground(1, notification);
+        startForeground(NOTIFICATION_ID, notification);
 
         tripID++;
         isTracking = true;
@@ -246,10 +247,10 @@ public class TrackingService extends Service implements SensorEventListener, Loc
      * Update the tripID stored in the SharedPreferences file.
      */
     private void writePrefs() {
-        String PREFS = "com.example.bikeapp.TRACKING_INFO";
+        final String PREFS = getString(R.string.preference_file_key);
         SharedPreferences sharedPref = getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putInt("trip_id", tripID);
+        editor.putInt(getString(R.string.prefs_trip_key), tripID);
         editor.apply();
     }
 

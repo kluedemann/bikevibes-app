@@ -20,6 +20,7 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract TrackingDao myDao();
 
     private static volatile AppDatabase instance;
+    private static final String DB_NAME = "bike.db";
     private static final int NUMBER_OF_THREADS = 1;
     private static final ExecutorService databaseExecutor = Executors.newFixedThreadPool(NUMBER_OF_THREADS);
 
@@ -32,7 +33,7 @@ public abstract class AppDatabase extends RoomDatabase {
         if (instance == null) {
             synchronized (AppDatabase.class) {
                 if (instance == null) {
-                    instance = Room.databaseBuilder(context.getApplicationContext(), AppDatabase.class, "bike.db").build();
+                    instance = Room.databaseBuilder(context.getApplicationContext(), AppDatabase.class, DB_NAME).build();
                 }
             }
         }

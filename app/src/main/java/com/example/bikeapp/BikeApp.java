@@ -66,16 +66,16 @@ public class BikeApp extends Application {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             // Create upload notification channel if needed
             // Create tracking notification channel
-            NotificationChannel channel = new NotificationChannel("1",
-                    "Tracking",
+            NotificationChannel channel = new NotificationChannel(getString(R.string.tracking_channel_id),
+                    getString(R.string.tracking_channel_name),
                     NotificationManager.IMPORTANCE_DEFAULT);
-            channel.setDescription("Indicates that the app is currently tracking your GPS location and accelerometer data. Disable the tracking switch in the app to stop.");
+            channel.setDescription(getString(R.string.tracking_channel_desc));
             notificationManager.createNotificationChannel(channel);
 
-            channel = new NotificationChannel("2",
-                    "Upload",
+            channel = new NotificationChannel(getString(R.string.upload_channel_id),
+                    getString(R.string.upload_channel_name),
                     NotificationManager.IMPORTANCE_DEFAULT);
-            channel.setDescription("Appears when data is being uploaded to the web server.");
+            channel.setDescription(getString(R.string.upload_channel_desc));
             notificationManager.createNotificationChannel(channel);
 
 

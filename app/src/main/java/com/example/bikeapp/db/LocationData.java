@@ -2,6 +2,7 @@ package com.example.bikeapp.db;
 
 import androidx.annotation.NonNull;
 import androidx.room.Entity;
+import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 
 import java.util.Locale;
@@ -12,6 +13,8 @@ import java.util.Locale;
  */
 @Entity
 public class LocationData extends DataInstance {
+    private static final String URL_TEMPLATE = "http://162.246.157.171:8080/upload/location?user_id=%s&time_stamp=%d&trip_id=%d&latitude=%f&longitude=%f";
+
     @PrimaryKey
     public long timestamp;
     public double latitude;
@@ -32,8 +35,7 @@ public class LocationData extends DataInstance {
      */
     @Override
     public String getURL(String user_id) {
-        String location_temp = "http://162.246.157.171:8080/upload/location?user_id=%s&time_stamp=%d&trip_id=%d&latitude=%f&longitude=%f";
-        return String.format(Locale.US, location_temp, user_id, timestamp, tripID, latitude, longitude);
+        return String.format(Locale.US, URL_TEMPLATE, user_id, timestamp, tripID, latitude, longitude);
     }
 
     /**

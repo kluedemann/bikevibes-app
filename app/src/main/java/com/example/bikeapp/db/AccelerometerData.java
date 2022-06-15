@@ -12,6 +12,8 @@ import java.util.Locale;
  */
 @Entity
 public class AccelerometerData extends DataInstance {
+    private static final String URL_TEMPLATE = "http://162.246.157.171:8080/upload/accelerometer?user_id=%s&time_stamp=%d&trip_id=%d&x_accel=%f&y_accel=%f&z_accel=%f";
+
     @PrimaryKey
     public long timestamp;
     public float x;
@@ -42,8 +44,7 @@ public class AccelerometerData extends DataInstance {
      */
     @Override
     public String getURL(String user_id) {
-        String accel_temp = "http://162.246.157.171:8080/upload/accelerometer?user_id=%s&time_stamp=%d&trip_id=%d&x_accel=%f&y_accel=%f&z_accel=%f";
-        return String.format(Locale.US, accel_temp, user_id, timestamp, tripID, x, y, z);
+        return String.format(Locale.US, URL_TEMPLATE, user_id, timestamp, tripID, x, y, z);
     }
 
     /**

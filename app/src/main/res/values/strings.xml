@@ -1,4 +1,5 @@
 <resources>
+    <!-- UI Strings-->
     <string name="app_name">BikeApp</string>
     <string name="x_label_text">x</string>
     <string name="y_label_text">y</string>
@@ -10,6 +11,33 @@
     <string name="upload_text">Upload</string>
     <string name="longitude_text">Longitude</string>
     <string name="latitude_text">Latitude</string>
-    <string name="uploaded_data_text">Data Deleted</string>
+
+    <!-- Toast Messages -->
+    <string name="uploaded_template">Uploaded Rows: %d/%d</string>
+    <string name="no_data_text">No Data</string>
+    <string name="timeout_text">Connection Timed Out</string>
+
+    <!-- Preferences File-->
     <string name="preference_file_key">com.example.bikeapp.TRACKING_INFO</string>
+    <string name="prefs_user_key">user_id</string>
+    <string name="prefs_trip_key">trip_id</string>
+
+    <!-- Intent Extras Keys -->
+    <string name="success_key">success</string>
+    <string name="uploaded_key">uploaded</string>
+    <string name="total_key">total</string>
+    <string name="message_key">message</string>
+
+    <!-- Notification Strings-->
+    <string name="upload_channel_name">Upload</string>
+    <string name="upload_channel_desc">Appears when data is being uploaded to the web server.</string>
+    <string name="upload_channel_id">2</string>
+    <string name="upload_notification_text">Uploading data</string>
+    <string name="tracking_channel_name">Tracking</string>
+    <string name="tracking_channel_desc">Appears when tracking GPS and accelerometer data.</string>
+    <string name="tracking_channel_id">1</string>
+    <string name="tracking_notification_text">Tracking data</string>
+
+    <!-- HTTP Request Keys-->
+    <string name="HTTP_success_key">success</string>
 </resources>

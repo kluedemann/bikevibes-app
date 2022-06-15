@@ -43,6 +43,7 @@ public class UploadService extends Service {
 
     /**
      * Required override method. This service cannot be bound to
+     *
      * @param intent - the intent that is used to bind to the service
      * @return - a Binder which can be used to retrieve this service
      */
@@ -69,8 +70,9 @@ public class UploadService extends Service {
 
     /**
      * Begin uploading data to the web server.
-     * @param intent - the intent sent to the service
-     * @param flags - additional data about the start request
+     *
+     * @param intent  - the intent sent to the service
+     * @param flags   - additional data about the start request
      * @param startID - can be used to distinguish service tasks
      * @return START_NOT_STICKY - indicates that the system should not recreate the service
      */
@@ -95,19 +97,22 @@ public class UploadService extends Service {
     /**
      * Get the userID from the preferences file, or generate one.
      * IDs are 36 character long strings that are universally unique identifiers
+     *
      * @return userID (str) - the user's unique ID
      */
     @NonNull
     private String getUserID() {
-        String prefs = getString(R.string.preference_file_key);
-        SharedPreferences sharedPref = getSharedPreferences(prefs, Context.MODE_PRIVATE);
-        String userID = sharedPref.getString("user_id", null);
+        final String PREFS = getString(R.string.preference_file_key);
+        final String user_key = getString(R.string.prefs_user_key);
+
+        SharedPreferences sharedPref = getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        String userID = sharedPref.getString(user_key, null);
 
         // Initialize user/trip ids on first opening of app
         if (userID == null) {
             userID = UUID.randomUUID().toString();
             SharedPreferences.Editor editor = sharedPref.edit();
-            editor.putString("user_id", userID);
+            editor.putString(user_key, userID);
             editor.apply();
         }
         return userID;
@@ -128,19 +133,20 @@ public class UploadService extends Service {
 
         if (numToUpload == 0) {
             Intent intent = new Intent(ACTION_UPLOAD);
-            intent.putExtra("success", false);
-            intent.putExtra("message", "No Data");
+            intent.putExtra(getString(R.string.success_key), false);
+            intent.putExtra(getString(R.string.message_key), getString(R.string.no_data_text));
             uploadCompleted(intent);
             return;
         }
 
         // Create notification and start in foreground
-        Notification notification = new NotificationCompat.Builder(getApplicationContext(), "2")
+        final int NOTIFICATION_ID = 2;
+        Notification notification = new NotificationCompat.Builder(getApplicationContext(), getString(R.string.upload_channel_id))
                 .setSmallIcon(R.mipmap.ic_launcher) // notification icon
-                .setContentTitle("BikeApp") // title for notification
-                .setContentText("Uploading data")// message for notification
+                .setContentTitle(getString(R.string.app_name)) // title for notification
+                .setContentText(getString(R.string.upload_notification_text))// message for notification
                 .setAutoCancel(true).build(); // clear notification after click
-        startForeground(2, notification);
+        startForeground(NOTIFICATION_ID, notification);
 
         String userID = getUserID();
 
@@ -164,6 +170,7 @@ public class UploadService extends Service {
      * Uses a Volley request queue to handle requests and responses.
      * Define callbacks that are invoked upon receiving a response from the server.
      * Handle successful and unsuccessful responses.
+     *
      * @param data (DataInstance) - the instance to upload
      */
     private void upload(@NonNull DataInstance data, String userID) {
@@ -173,7 +180,7 @@ public class UploadService extends Service {
         JsonObjectRequest jORequest = new JsonObjectRequest(Request.Method.POST, url, null, response -> {
             // onResponse: Called upon receiving a response from the server
             //Log.d(TAG, String.format("SUCCESS: %s", isSuccess));
-            boolean isSuccess = response.optBoolean("success", false);
+            boolean isSuccess = response.optBoolean(getString(R.string.HTTP_success_key), false);
             requestCompleted(isSuccess);
             if (isSuccess) {
                 repository.delete(data);
@@ -187,8 +194,8 @@ public class UploadService extends Service {
 
                 // Send broadcast back
                 Intent intent = new Intent(ACTION_UPLOAD);
-                intent.putExtra("success", false);
-                intent.putExtra("message", "Connection timed out");
+                intent.putExtra(getString(R.string.success_key), false);
+                intent.putExtra(getString(R.string.message_key), getString(R.string.timeout_text));
                 uploadCompleted(intent);
             } else if (error instanceof ServerError && error.networkResponse.statusCode == 500) {
                 // Discard local copy if server has duplicate data
@@ -206,6 +213,7 @@ public class UploadService extends Service {
      * Keep track of how many requests are completed successfully.
      * Called upon receiving a response or error from an HTTP request.
      * Send a broadcast to the MainActivity once all responses have been received
+     *
      * @param success (boolean) - true if the response was a successful one
      */
     private void requestCompleted(boolean success) {
@@ -221,9 +229,9 @@ public class UploadService extends Service {
 
             // Send broadcast
             Intent intent = new Intent(ACTION_UPLOAD);
-            intent.putExtra("success", true);
-            intent.putExtra("uploaded", numUploaded);
-            intent.putExtra("total", numResponses);
+            intent.putExtra(getString(R.string.success_key), true);
+            intent.putExtra(getString(R.string.uploaded_key), numUploaded);
+            intent.putExtra(getString(R.string.total_key), numResponses);
             uploadCompleted(intent);
         }
     }
@@ -231,6 +239,7 @@ public class UploadService extends Service {
     /**
      * Send a broadcast and stop the service once it is completed.
      * This may be called on an error, no data, or after all instances have been uploaded.
+     *
      * @param intent (Intent) - the message to return to the MainActivity
      *               success - (boolean) whether upload completed successfully
      *               total - (int) number of rows attempted to upload

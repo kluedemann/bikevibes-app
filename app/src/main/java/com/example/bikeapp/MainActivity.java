@@ -199,16 +199,16 @@ public class MainActivity extends AppCompatActivity {
      *               message - (String) message to display if unsuccessful
      */
     private void uploadComplete(@NonNull Intent intent) {
-        boolean success = intent.getBooleanExtra("success", false);
+        boolean success = intent.getBooleanExtra(getString(R.string.success_key), false);
         if (success) {
             // Display number of rows uploaded
-            int total = intent.getIntExtra("total", 0);
-            int uploaded = intent.getIntExtra("uploaded", 0);
-            String toast_text = String.format(Locale.getDefault(), "Uploaded rows: %d/%d", uploaded, total);
+            int total = intent.getIntExtra(getString(R.string.total_key), 0);
+            int uploaded = intent.getIntExtra(getString(R.string.uploaded_key), 0);
+            String toast_text = String.format(Locale.getDefault(), getString(R.string.uploaded_template), uploaded, total);
             Toast.makeText(getApplicationContext(), toast_text, Toast.LENGTH_SHORT).show();
         } else {
             // Display error message
-            String message = intent.getStringExtra("message");
+            String message = intent.getStringExtra(getString(R.string.message_key));
             Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
         }
         uploadButton.setEnabled(true);
