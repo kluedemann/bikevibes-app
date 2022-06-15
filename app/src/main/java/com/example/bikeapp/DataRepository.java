@@ -1,5 +1,6 @@
 package com.example.bikeapp;
 
+import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
@@ -11,26 +12,36 @@ import com.example.bikeapp.db.TrackingDao;
 
 import java.util.List;
 
+/**
+ * Provides access to the database for app components.
+ * Contains a singleton repository instance, data access object, and
+ * some current data objects.
+ */
 public class DataRepository {
-    private static DataRepository sInstance;
+    private static volatile DataRepository instance;
 
     private final TrackingDao myDao;
-    private final MutableLiveData<AccelerometerData> mAccel = new MutableLiveData<>();
-    private final MutableLiveData<LocationData> mLocation = new MutableLiveData<>();
+    private final MutableLiveData<AccelerometerData> accel = new MutableLiveData<>();
+    private final MutableLiveData<LocationData> location = new MutableLiveData<>();
 
-    DataRepository(final AppDatabase database) {
+    DataRepository(@NonNull final AppDatabase database) {
         myDao = database.myDao();
     }
 
+    /**
+     * Get the singleton repository instance or create it if needed.
+     * @param database - the database that the repository accesses
+     * @return instance - the repository instance
+     */
     public static DataRepository getInstance(final AppDatabase database) {
-        if (sInstance == null) {
+        if (instance == null) {
             synchronized (DataRepository.class) {
-                if (sInstance == null) {
-                    sInstance = new DataRepository(database);
+                if (instance == null) {
+                    instance = new DataRepository(database);
                 }
             }
         }
-        return sInstance;
+        return instance;
     }
 
     void insert(DataInstance dataInstance) {
@@ -42,19 +53,19 @@ public class DataRepository {
     }
 
     LiveData<AccelerometerData> getAccel() {
-        return mAccel;
+        return accel;
     }
 
     LiveData<LocationData> getLoc() {
-        return mLocation;
+        return location;
     }
 
     void setAccel(AccelerometerData acc) {
-        mAccel.setValue(acc);
+        accel.setValue(acc);
     }
 
     void setLoc(LocationData loc) {
-        mLocation.setValue(loc);
+        location.setValue(loc);
     }
 
     List<AccelerometerData> getAccelList() {

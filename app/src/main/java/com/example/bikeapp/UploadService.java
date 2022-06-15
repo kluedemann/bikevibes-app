@@ -8,6 +8,7 @@ import android.content.SharedPreferences;
 import android.os.IBinder;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
@@ -96,6 +97,7 @@ public class UploadService extends Service {
      * IDs are 36 character long strings that are universally unique identifiers
      * @return userID (str) - the user's unique ID
      */
+    @NonNull
     private String getUserID() {
         String prefs = getString(R.string.preference_file_key);
         SharedPreferences sharedPref = getSharedPreferences(prefs, Context.MODE_PRIVATE);
@@ -164,7 +166,7 @@ public class UploadService extends Service {
      * Handle successful and unsuccessful responses.
      * @param data (DataInstance) - the instance to upload
      */
-    private void upload(DataInstance data, String userID) {
+    private void upload(@NonNull DataInstance data, String userID) {
         String url = data.getURL(userID);
 
         // Create the HTTP request

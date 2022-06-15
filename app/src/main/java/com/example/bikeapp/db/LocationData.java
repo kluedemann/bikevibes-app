@@ -1,10 +1,15 @@
 package com.example.bikeapp.db;
 
+import androidx.annotation.NonNull;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
 import java.util.Locale;
 
+/**
+ * Entity class for location objects.
+ * Model for storing location data in local database.
+ */
 @Entity
 public class LocationData extends DataInstance {
     @PrimaryKey
@@ -20,16 +25,32 @@ public class LocationData extends DataInstance {
         this.tripID = tripID;
     }
 
+    /**
+     * Generate the URL used to upload this data instance
+     * @param user_id - the userID used to upload it
+     * @return the URL string to be sent in the HTTP request
+     */
+    @Override
     public String getURL(String user_id) {
         String location_temp = "http://162.246.157.171:8080/upload/location?user_id=%s&time_stamp=%d&trip_id=%d&latitude=%f&longitude=%f";
         return String.format(Locale.US, location_temp, user_id, timestamp, tripID, latitude, longitude);
     }
 
-    public int delete(TrackingDao myDao) {
-        return myDao.deleteLocation(this);
+    /**
+     * Delete this object from the database
+     * @param myDao - the Data Access Object
+     */
+    @Override
+    public void delete(@NonNull TrackingDao myDao) {
+        myDao.deleteLocation(this);
     }
 
-    public void insert(TrackingDao myDao) {
+    /**
+     * Insert this object into the database.
+     * @param myDao - the Data Access object
+     */
+    @Override
+    public void insert(@NonNull TrackingDao myDao) {
         myDao.insertLocation(this);
     }
 }

@@ -8,7 +8,10 @@ import androidx.lifecycle.LiveData;
 import com.example.bikeapp.db.AccelerometerData;
 import com.example.bikeapp.db.LocationData;
 
-
+/**
+ * Contains the business logic for the UI.
+ * Retrieves data from the repository and provides it to the MainActivity.
+ */
 public class TrackingViewModel extends AndroidViewModel {
 
     private final DataRepository mRepository;

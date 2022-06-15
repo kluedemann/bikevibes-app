@@ -1,5 +1,6 @@
 package com.example.bikeapp;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.app.ActivityCompat;
@@ -16,6 +17,7 @@ import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -40,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
     // Receiver that listens for when the upload task is finished
     private final BroadcastReceiver bReceiver = new BroadcastReceiver() {
         @Override
-        public void onReceive(Context context, Intent intent) {
+        public void onReceive(Context context, @NonNull Intent intent) {
             if (intent.getAction().equals(UploadService.getAction())) {
                 uploadComplete(intent);
             }
@@ -77,6 +79,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        Log.d(TAG, "Created!");
 
         // Setup ViewModel and live data
         TrackingViewModel mViewModel = new ViewModelProvider(this).get(TrackingViewModel.class);
@@ -144,6 +148,7 @@ public class MainActivity extends AppCompatActivity {
      * Called whenever the app leaves the foreground.
      * Stops tracking data and listening for broadcasts.
      */
+    @Override
     protected void onPause() {
         super.onPause();
 
@@ -193,7 +198,7 @@ public class MainActivity extends AppCompatActivity {
      *               uploaded - (int) number of rows uploaded successfully
      *               message - (String) message to display if unsuccessful
      */
-    private void uploadComplete(Intent intent) {
+    private void uploadComplete(@NonNull Intent intent) {
         boolean success = intent.getBooleanExtra("success", false);
         if (success) {
             // Display number of rows uploaded

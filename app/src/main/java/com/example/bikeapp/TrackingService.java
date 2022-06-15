@@ -161,7 +161,7 @@ public class TrackingService extends Service implements SensorEventListener, Loc
      * @param event - the SensorEvent triggered by the accelerometer
      */
     @Override
-    public void onSensorChanged(SensorEvent event) {
+    public void onSensorChanged(@NonNull SensorEvent event) {
 
         float[] linear_acceleration = event.values;
         Date date = new Date();
