@@ -17,6 +17,7 @@ import android.location.LocationManager;
 import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
+import android.os.PowerManager;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -33,13 +34,14 @@ public class TrackingService extends Service implements SensorEventListener, Loc
 
     private int tripID;
     private boolean isTracking = false;
-    private SensorManager mSensorManager;
-    private Sensor mAccelerometer;
+    private SensorManager sensorManager;
+    private Sensor accelerometer;
     private LocationManager locationManager;
     private final IBinder binder = new LocalBinder();
-    private DataRepository mRepository;
+    private DataRepository repository;
     private boolean isLinear = true;
     private final float[] gravity = new float[3];
+    private PowerManager.WakeLock wakeLock;
 
     // Binder class to return the Service
     public class LocalBinder extends Binder {
@@ -56,14 +58,20 @@ public class TrackingService extends Service implements SensorEventListener, Loc
     public void onCreate() {
         super.onCreate();
         BikeApp app = (BikeApp) getApplication();
-        mRepository = app.getRepository();
+        repository = app.getRepository();
 
-        mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
-        if (mAccelerometer == null) {
+        // Create wakelock
+        PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, getString(R.string.wakelock));
+
+        // Get accelerometer sensor
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
+        if (accelerometer == null) {
             isLinear = false;
-            mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+            accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         }
+
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
         String PREFS = getString(R.string.preference_file_key);
@@ -106,6 +114,8 @@ public class TrackingService extends Service implements SensorEventListener, Loc
         tripID++;
         isTracking = true;
         startTracking();
+        writePrefs();
+        wakeLock.acquire(10*60*60*1000L); /*10 Hour Timeout*/
 
         return START_NOT_STICKY;
     }
@@ -132,9 +142,8 @@ public class TrackingService extends Service implements SensorEventListener, Loc
     public boolean onUnbind(Intent intent) {
         Log.d(TAG, "Unbound!");
         if (!isTracking) {
-            mSensorManager.unregisterListener(this);
+            sensorManager.unregisterListener(this);
             locationManager.removeUpdates(this);
-            writePrefs();
             Log.d(TAG, "Stopped!");
             stopSelf();
         }
@@ -148,9 +157,11 @@ public class TrackingService extends Service implements SensorEventListener, Loc
     @Override
     public void onDestroy() {
         Log.d(TAG, "Destroyed!");
-        mSensorManager.unregisterListener(this);
+        sensorManager.unregisterListener(this);
         locationManager.removeUpdates(this);
-        writePrefs();
+        if (wakeLock.isHeld()) {
+            wakeLock.release();
+        }
     }
 
     /**
@@ -182,9 +193,9 @@ public class TrackingService extends Service implements SensorEventListener, Loc
         }
         AccelerometerData acc = new AccelerometerData(date.getTime(), linear_acceleration, tripID);
         //Log.d("Service", "Accel");
-        mRepository.setAccel(acc);
+        repository.setAccel(acc);
         if (isTracking) {
-            mRepository.insert(acc);
+            repository.insert(acc);
         }
     }
 
@@ -209,10 +220,10 @@ public class TrackingService extends Service implements SensorEventListener, Loc
     public void onLocationChanged(@NonNull Location loc) {
         Date date = new Date();
         LocationData locData = new LocationData(date.getTime(), loc.getLatitude(), loc.getLongitude(), tripID);
-        mRepository.setLoc(locData);
+        repository.setLoc(locData);
         //Log.d("Service", "Location");
         if (isTracking) {
-            mRepository.insert(locData);
+            repository.insert(locData);
         }
     }
 
@@ -223,8 +234,8 @@ public class TrackingService extends Service implements SensorEventListener, Loc
         final int MIN_DELAY = 5 * 1000;
         final int MIN_DIST = 10;
 
-        if (mAccelerometer != null) {
-            mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+        if (accelerometer != null) {
+            sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
         }
         if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) && ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, MIN_DELAY, MIN_DIST, this);
@@ -232,15 +243,19 @@ public class TrackingService extends Service implements SensorEventListener, Loc
     }
 
     /**
-     * Stop storing data and remove the service from the foreground.
+     * Stop storing data, release WakeLock, and remove the service from the foreground.
      */
     void disableTracking() {
         Log.d(TAG, "Tracking stopped!");
         isTracking = false;
+
+        if (wakeLock.isHeld()) {
+            wakeLock.release();
+        }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             stopForeground(STOP_FOREGROUND_REMOVE);
         }
-        writePrefs();
     }
 
     /**

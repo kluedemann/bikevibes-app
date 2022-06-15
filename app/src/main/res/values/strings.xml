@@ -40,4 +40,7 @@
 
     <!-- HTTP Request Keys-->
     <string name="HTTP_success_key">success</string>
+
+    <!-- WakeLock Tag -->
+    <string name="wakelock">BikeApp::TrackingWakeLock</string>
 </resources>
