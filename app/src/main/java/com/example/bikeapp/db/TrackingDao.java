@@ -32,4 +32,10 @@ public interface TrackingDao {
 
     @Delete
     void deleteAccel(AccelerometerData acc);
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void insertAccelBatch(List<AccelerometerData> accelList);
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void insertLocBatch(List<LocationData> locList);
 }

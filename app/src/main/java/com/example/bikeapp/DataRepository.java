@@ -52,6 +52,14 @@ public class DataRepository {
         AppDatabase.getExecutor().execute(() -> dataInstance.delete(myDao));
     }
 
+    void insertAccelBatch(List<AccelerometerData> accelList) {
+        AppDatabase.getExecutor().execute(() -> myDao.insertAccelBatch(accelList));
+    }
+
+    void insertLocBatch(List<LocationData> locList) {
+        AppDatabase.getExecutor().execute(() -> myDao.insertLocBatch(locList));
+    }
+
     LiveData<AccelerometerData> getAccel() {
         return accel;
     }

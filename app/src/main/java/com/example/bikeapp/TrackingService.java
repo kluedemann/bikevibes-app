@@ -27,7 +27,9 @@ import androidx.core.content.ContextCompat;
 import com.example.bikeapp.db.AccelerometerData;
 import com.example.bikeapp.db.LocationData;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 public class TrackingService extends Service implements SensorEventListener, LocationListener {
     private static final String TAG = "TrackingService";
@@ -42,6 +44,8 @@ public class TrackingService extends Service implements SensorEventListener, Loc
     private boolean isLinear = true;
     private final float[] gravity = new float[3];
     private PowerManager.WakeLock wakeLock;
+    private List<AccelerometerData> accelCache = new ArrayList<>();
+    private List<LocationData> locCache = new ArrayList<>();
 
     // Binder class to return the Service
     public class LocalBinder extends Binder {
@@ -199,7 +203,13 @@ public class TrackingService extends Service implements SensorEventListener, Loc
         //Log.d("Service", "Accel");
         repository.setAccel(acc);
         if (isTracking) {
-            repository.insert(acc);
+            //Log.d(TAG, String.format(Locale.getDefault(), "Size: %d", accelCache.size()));
+            accelCache.add(acc);
+            if (accelCache.size() == 150) {
+                //Log.d(TAG, "INSERTING ACCEL");
+                repository.insertAccelBatch(accelCache);
+                accelCache = new ArrayList<>();
+            }
         }
     }
 
@@ -225,9 +235,13 @@ public class TrackingService extends Service implements SensorEventListener, Loc
         Date date = new Date();
         LocationData locData = new LocationData(date.getTime(), loc.getLatitude(), loc.getLongitude(), tripID);
         repository.setLoc(locData);
-        //Log.d("Service", "Location");
         if (isTracking) {
-            repository.insert(locData);
+            //repository.insert(locData);
+            locCache.add(locData);
+            if (locCache.size() == 6) {
+                repository.insertLocBatch(locCache);
+                locCache = new ArrayList<>();
+            }
         }
     }
 
@@ -252,6 +266,11 @@ public class TrackingService extends Service implements SensorEventListener, Loc
     void disableTracking() {
         Log.d(TAG, "Tracking stopped!");
         isTracking = false;
+
+        repository.insertLocBatch(locCache);
+        repository.insertAccelBatch(accelCache);
+        locCache = new ArrayList<>();
+        accelCache = new ArrayList<>();
 
         if (wakeLock.isHeld()) {
             wakeLock.release();
