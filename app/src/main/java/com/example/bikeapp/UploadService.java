@@ -78,6 +78,7 @@ public class UploadService extends Service {
      */
     @Override
     public int onStartCommand(Intent intent, int flags, int startID) {
+        super.onStartCommand(intent, flags, startID);
         Log.d(TAG, "Started!");
         if (!isUploading) {
             uploadExecutor.execute(this::uploadData);
@@ -91,6 +92,7 @@ public class UploadService extends Service {
      */
     @Override
     public void onDestroy() {
+        super.onDestroy();
         Log.d(TAG, "Destroyed!");
     }
 

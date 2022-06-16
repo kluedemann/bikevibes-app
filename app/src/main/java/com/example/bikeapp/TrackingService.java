@@ -101,6 +101,7 @@ public class TrackingService extends Service implements SensorEventListener, Loc
      */
     @Override
     public int onStartCommand(Intent intent, int flags, int startID) {
+        super.onStartCommand(intent, flags, startID);
         Log.d(TAG, "Started!");
 
         final int NOTIFICATION_ID = 1;
@@ -127,6 +128,7 @@ public class TrackingService extends Service implements SensorEventListener, Loc
      */
     @Override
     public void onRebind(Intent intent) {
+        super.onRebind(intent);
         Log.d(TAG, "Rebound!");
         startTracking();
     }
@@ -140,6 +142,7 @@ public class TrackingService extends Service implements SensorEventListener, Loc
      */
     @Override
     public boolean onUnbind(Intent intent) {
+        super.onUnbind(intent);
         Log.d(TAG, "Unbound!");
         if (!isTracking) {
             sensorManager.unregisterListener(this);
@@ -156,6 +159,7 @@ public class TrackingService extends Service implements SensorEventListener, Loc
      */
     @Override
     public void onDestroy() {
+        super.onDestroy();
         Log.d(TAG, "Destroyed!");
         sensorManager.unregisterListener(this);
         locationManager.removeUpdates(this);
