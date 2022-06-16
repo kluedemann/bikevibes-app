@@ -40,6 +40,8 @@ public class UploadService extends Service {
     private RequestQueue queue;
     private boolean isUploading = false;
     private ExecutorService uploadExecutor;
+    private String userID;
+    private long minTime;
 
     /**
      * Required override method. This service cannot be bound to
@@ -66,6 +68,8 @@ public class UploadService extends Service {
         uploadExecutor = app.getExecutors();
 
         queue = app.getQueue();
+
+        getPrefs();
     }
 
     /**
@@ -99,25 +103,23 @@ public class UploadService extends Service {
     /**
      * Get the userID from the preferences file, or generate one.
      * IDs are 36 character long strings that are universally unique identifiers
-     *
-     * @return userID (str) - the user's unique ID
      */
-    @NonNull
-    private String getUserID() {
+    private void getPrefs() {
         final String PREFS = getString(R.string.preference_file_key);
-        final String user_key = getString(R.string.prefs_user_key);
+        final String USER_KEY = getString(R.string.prefs_user_key);
+        final String MIN_TIME_KEY = getString(R.string.prefs_time_key);
 
         SharedPreferences sharedPref = getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-        String userID = sharedPref.getString(user_key, null);
+        userID = sharedPref.getString(USER_KEY, null);
+        minTime = sharedPref.getLong(MIN_TIME_KEY, 0);
 
         // Initialize user/trip ids on first opening of app
         if (userID == null) {
             userID = UUID.randomUUID().toString();
             SharedPreferences.Editor editor = sharedPref.edit();
-            editor.putString(user_key, userID);
+            editor.putString(USER_KEY, userID);
             editor.apply();
         }
-        return userID;
     }
 
     /**
@@ -125,8 +127,10 @@ public class UploadService extends Service {
      */
     private void uploadData() {
         // Query data
-        List<LocationData> locations = repository.getLocList();
-        List<AccelerometerData> accel_readings = repository.getAccelList();
+
+        List<LocationData> locations = repository.getLocList(minTime);
+        List<AccelerometerData> accel_readings = repository.getAccelList(minTime);
+        minTime = repository.getMaxTime();
 
         // Initialize counters
         numToUpload = locations.size() + accel_readings.size();
@@ -150,8 +154,6 @@ public class UploadService extends Service {
                 .setAutoCancel(true).build(); // clear notification after click
         startForeground(NOTIFICATION_ID, notification);
 
-        String userID = getUserID();
-
         // Upload location data
         for (int i = 0; i < locations.size(); i++) {
             LocationData loc = locations.get(i);
@@ -165,6 +167,8 @@ public class UploadService extends Service {
             upload(acc, userID);
             //Log.d(TAG, String.format("ACCEL: %f, %f, %f, %d", acc.x, acc.y, acc.z, acc.timestamp));
         }
+
+        writePrefs();
     }
 
     /**
@@ -254,6 +258,16 @@ public class UploadService extends Service {
         isUploading = false;
         queue.cancelAll(TAG);
         stopSelf();
+    }
+
+    private void writePrefs() {
+        final String PREFS = getString(R.string.preference_file_key);
+        final String MIN_TIME_KEY = getString(R.string.prefs_time_key);
+
+        SharedPreferences sharedPref = getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putLong(MIN_TIME_KEY, minTime);
+        editor.apply();
     }
 
     public static String getAction() {

@@ -21,11 +21,11 @@ public interface TrackingDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertAccel(AccelerometerData acc);
 
-    @Query("SELECT * FROM LocationData")
-    List<LocationData> getLocation();
+    @Query("SELECT * FROM LocationData WHERE timestamp > :minTimestamp")
+    List<LocationData> getLocation(long minTimestamp);
 
-    @Query("SELECT * FROM AccelerometerData")
-    List<AccelerometerData> getAccel();
+    @Query("SELECT * FROM AccelerometerData WHERE timestamp > :minTimestamp")
+    List<AccelerometerData> getAccel(long minTimestamp);
 
     @Delete
     void deleteLocation(LocationData loc);
@@ -38,4 +38,10 @@ public interface TrackingDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertLocBatch(List<LocationData> locList);
+
+    @Query("SELECT MAX(timestamp) FROM AccelerometerData")
+    long getMaxAccelTime();
+
+    @Query("SELECT MAX(timestamp) FROM LocationData")
+    long getMaxLocTime();
 }

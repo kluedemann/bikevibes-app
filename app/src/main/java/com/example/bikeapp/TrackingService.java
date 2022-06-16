@@ -46,6 +46,7 @@ public class TrackingService extends Service implements SensorEventListener, Loc
     private PowerManager.WakeLock wakeLock;
     private List<AccelerometerData> accelCache = new ArrayList<>();
     private List<LocationData> locCache = new ArrayList<>();
+    private int numInserted;
 
     // Binder class to return the Service
     public class LocalBinder extends Binder {
@@ -116,6 +117,7 @@ public class TrackingService extends Service implements SensorEventListener, Loc
                 .setAutoCancel(true).build(); // clear notification after click
         startForeground(NOTIFICATION_ID, notification);
 
+        numInserted = 0;
         tripID++;
         isTracking = true;
         startTracking();
@@ -207,6 +209,7 @@ public class TrackingService extends Service implements SensorEventListener, Loc
             accelCache.add(acc);
             if (accelCache.size() == 150) {
                 //Log.d(TAG, "INSERTING ACCEL");
+                numInserted += 150;
                 repository.insertAccelBatch(accelCache);
                 accelCache = new ArrayList<>();
             }
@@ -239,6 +242,7 @@ public class TrackingService extends Service implements SensorEventListener, Loc
             //repository.insert(locData);
             locCache.add(locData);
             if (locCache.size() == 6) {
+                numInserted += 6;
                 repository.insertLocBatch(locCache);
                 locCache = new ArrayList<>();
             }
@@ -269,8 +273,10 @@ public class TrackingService extends Service implements SensorEventListener, Loc
 
         repository.insertLocBatch(locCache);
         repository.insertAccelBatch(accelCache);
+        numInserted += locCache.size() + accelCache.size();
         locCache = new ArrayList<>();
         accelCache = new ArrayList<>();
+        Log.d(TAG, String.format("INSERTED: %d", numInserted));
 
         if (wakeLock.isHeld()) {
             wakeLock.release();

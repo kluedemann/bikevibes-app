@@ -76,11 +76,17 @@ public class DataRepository {
         location.setValue(loc);
     }
 
-    List<AccelerometerData> getAccelList() {
-        return myDao.getAccel();
+    List<AccelerometerData> getAccelList(long minTime) {
+        return myDao.getAccel(minTime);
     }
 
-    List<LocationData> getLocList() {
-        return myDao.getLocation();
+    List<LocationData> getLocList(long minTime) {
+        return myDao.getLocation(minTime);
+    }
+
+    long getMaxTime() {
+        long accTime = myDao.getMaxAccelTime();
+        long locTime = myDao.getMaxLocTime();
+        return Math.max(accTime, locTime);
     }
 }
