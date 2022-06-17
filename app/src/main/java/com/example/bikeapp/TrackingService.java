@@ -92,7 +92,6 @@ public class TrackingService extends Service implements SensorEventListener, Loc
     @Override
     public IBinder onBind(Intent intent) {
         Log.d(TAG, "Bound!");
-        startTracking();
         return binder;
     }
 
@@ -120,7 +119,7 @@ public class TrackingService extends Service implements SensorEventListener, Loc
         numInserted = 0;
         tripID++;
         isTracking = true;
-        startTracking();
+        startListening();
         writePrefs();
         wakeLock.acquire(10*60*60*1000L); /*10 Hour Timeout*/
 
@@ -136,7 +135,6 @@ public class TrackingService extends Service implements SensorEventListener, Loc
     public void onRebind(Intent intent) {
         super.onRebind(intent);
         Log.d(TAG, "Rebound!");
-        startTracking();
     }
 
     /**
@@ -151,9 +149,6 @@ public class TrackingService extends Service implements SensorEventListener, Loc
         super.onUnbind(intent);
         Log.d(TAG, "Unbound!");
         if (!isTracking) {
-            sensorManager.unregisterListener(this);
-            locationManager.removeUpdates(this);
-            Log.d(TAG, "Stopped!");
             stopSelf();
         }
         return true;
@@ -253,7 +248,7 @@ public class TrackingService extends Service implements SensorEventListener, Loc
     /**
      * Register listeners for accelerometer and location updates.
      */
-    private void startTracking() {
+    private void startListening() {
         final int MIN_DELAY = 5 * 1000;
         final int MIN_DIST = 10;
 
@@ -278,6 +273,9 @@ public class TrackingService extends Service implements SensorEventListener, Loc
         locCache = new ArrayList<>();
         accelCache = new ArrayList<>();
         Log.d(TAG, String.format("INSERTED: %d", numInserted));
+
+        sensorManager.unregisterListener(this);
+        locationManager.removeUpdates(this);
 
         if (wakeLock.isHeld()) {
             wakeLock.release();

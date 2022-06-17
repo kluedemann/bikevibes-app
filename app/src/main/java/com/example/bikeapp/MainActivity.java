@@ -25,6 +25,9 @@ import android.widget.Toast;
 import com.example.bikeapp.db.AccelerometerData;
 import com.example.bikeapp.db.LocationData;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Locale;
 
 /**
@@ -33,8 +36,7 @@ import java.util.Locale;
  */
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
-    private TextView[] dataViews;
-    private TextView[] locationViews;
+    private final TextView[] dataViews = new TextView[6];
     private Button uploadButton;
     private TrackingService trackingService;
     private boolean isBound;
@@ -82,19 +84,22 @@ public class MainActivity extends AppCompatActivity {
 
         Log.d(TAG, "Created!");
 
+        // Collect Text boxes to display data
+        dataViews[0] = findViewById(R.id.dateTextView);
+        dataViews[1] = findViewById(R.id.bumpTextView);
+        dataViews[2] = findViewById(R.id.startTextView);
+        dataViews[3] = findViewById(R.id.endTextView);
+        dataViews[4] = findViewById(R.id.distTextView);
+        dataViews[5] = findViewById(R.id.speedTextView);
+
         // Setup ViewModel and live data
         TrackingViewModel mViewModel = new ViewModelProvider(this).get(TrackingViewModel.class);
-        mViewModel.getLoc().observe(this, this::setLocationText);
-        mViewModel.getAccel().observe(this, this::setAccelText);
-
-        // Collect Text boxes to display data
-        dataViews = new TextView[3];
-        dataViews[0] = findViewById(R.id.x_accel_text);
-        dataViews[1] = findViewById(R.id.y_accel_text);
-        dataViews[2] = findViewById(R.id.z_accel_text);
-        locationViews = new TextView[2];
-        locationViews[0] = findViewById(R.id.latitude_data);
-        locationViews[1] = findViewById(R.id.longitude_data);
+        mViewModel.getStart().observe(this, this::setStartText);
+        mViewModel.getEnd().observe(this, this::setEndText);
+        mViewModel.getDist().observe(this, this::setDistText);
+        mViewModel.getSpeed().observe(this, this::setSpeedText);
+        mViewModel.getBumpiness().observe(this, this::setBumpText);
+        mViewModel.update();
 
         // Request location permissions
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
@@ -161,30 +166,41 @@ public class MainActivity extends AppCompatActivity {
         LocalBroadcastManager.getInstance(getApplicationContext()).unregisterReceiver(bReceiver);
     }
 
-    /**
-     * Updates the TextViews to display current accelerometer data.
-     * Called by LiveData observer when accelerometer values are updated.
-     *
-     * @param acc - the AccelerometerData to be displayed
-     */
-    private void setAccelText(AccelerometerData acc) {
-        if (acc != null) {
-            dataViews[0].setText(String.format(Locale.getDefault(), "%.2f", acc.x));
-            dataViews[1].setText(String.format(Locale.getDefault(), "%.2f", acc.y));
-            dataViews[2].setText(String.format(Locale.getDefault(), "%.2f", acc.z));
+    private void setStartText(Date date) {
+        if (date != null) {
+            String format = "MMMM d, yyyy";
+            DateFormat df = new SimpleDateFormat(format, Locale.getDefault());
+            dataViews[0].setText(df.format(date));
+
+            format = "hh:mm a";
+            df = new SimpleDateFormat(format, Locale.getDefault());
+            dataViews[2].setText(df.format(date));
         }
     }
 
-    /**
-     * Updates the TextViews to display current location data.
-     * Called by LiveData observer when GPS coordinates are updated.
-     *
-     * @param loc - the LocationData to be displayed
-     */
-    private void setLocationText(LocationData loc) {
-        if (loc != null) {
-            locationViews[0].setText(String.format(Locale.getDefault(), "%f", loc.latitude));
-            locationViews[1].setText(String.format(Locale.getDefault(), "%f", loc.longitude));
+    private void setEndText(Date date) {
+        if (date != null) {
+            final String format = "hh:mm a";
+            final DateFormat df = new SimpleDateFormat(format, Locale.getDefault());
+            dataViews[3].setText(df.format(date));
+        }
+    }
+
+    private void setBumpText(Double bumpiness) {
+        if (bumpiness != null) {
+            dataViews[1].setText(String.format(Locale.getDefault(), "%.2f m/s^2", bumpiness));
+        }
+    }
+
+    private void setDistText(Double dist) {
+        if (dist != null) {
+            dataViews[4].setText(String.format(Locale.getDefault(), "%.2f km", dist));
+        }
+    }
+
+    private void setSpeedText(Double speed) {
+        if (speed != null) {
+            dataViews[5].setText(String.format(Locale.getDefault(), "%.2f km/h", speed));
         }
     }
 
