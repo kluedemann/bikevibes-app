@@ -64,11 +64,8 @@ public class UploadService extends Service {
         Log.d(TAG, "Created!");
         BikeApp app = (BikeApp) getApplication();
         repository = app.getRepository();
-
         uploadExecutor = app.getExecutors();
-
         queue = app.getQueue();
-
         getPrefs();
     }
 
@@ -189,9 +186,6 @@ public class UploadService extends Service {
             //Log.d(TAG, String.format("SUCCESS: %s", isSuccess));
             boolean isSuccess = response.optBoolean(getString(R.string.HTTP_success_key), false);
             requestCompleted(isSuccess);
-//            if (isSuccess) {
-//                repository.delete(data);
-//            }
         }, error -> {
             // onErrorResponse: Called upon receiving an error response
             Log.e(TAG, error.toString());
@@ -206,7 +200,7 @@ public class UploadService extends Service {
                 uploadCompleted(intent);
             } else if (error instanceof ServerError && error.networkResponse.statusCode == 500) {
                 // Discard local copy if server has duplicate data
-//                repository.delete(data);
+                Log.d(TAG, "Duplicate!");
             }
             requestCompleted(false);
         });

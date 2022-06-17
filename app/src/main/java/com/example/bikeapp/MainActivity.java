@@ -22,9 +22,6 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.bikeapp.db.AccelerometerData;
-import com.example.bikeapp.db.LocationData;
-
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -166,6 +163,10 @@ public class MainActivity extends AppCompatActivity {
         LocalBroadcastManager.getInstance(getApplicationContext()).unregisterReceiver(bReceiver);
     }
 
+    /**
+     * Update the text for date and start time.
+     * @param date - the Date object from the first accelerometer reading in the trip
+     */
     private void setStartText(Date date) {
         if (date != null) {
             String format = "MMMM d, yyyy";
@@ -178,6 +179,10 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Update the text for end time.
+     * @param date - the Date object from the last accelerometer reading in the trip.
+     */
     private void setEndText(Date date) {
         if (date != null) {
             final String format = "hh:mm a";
@@ -186,18 +191,30 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Update the text for the bumpiness score.
+     * @param bumpiness - the RMS of vertical acceleration over the trip
+     */
     private void setBumpText(Double bumpiness) {
         if (bumpiness != null) {
             dataViews[1].setText(String.format(Locale.getDefault(), "%.2f m/s^2", bumpiness));
         }
     }
 
+    /**
+     * Update the text for the trip distance.
+     * @param dist - the distance of the trip in km
+     */
     private void setDistText(Double dist) {
         if (dist != null) {
             dataViews[4].setText(String.format(Locale.getDefault(), "%.2f km", dist));
         }
     }
 
+    /**
+     * Update the text for the average speed
+     * @param speed - the avg speed over the trip
+     */
     private void setSpeedText(Double speed) {
         if (speed != null) {
             dataViews[5].setText(String.format(Locale.getDefault(), "%.2f km/h", speed));

@@ -50,14 +50,6 @@ public class TrackingViewModel extends AndroidViewModel {
         return mRepository.getBumpiness();
     }
 
-    LiveData<AccelerometerData> getAccel() {
-        return mRepository.getAccel();
-    }
-
-    LiveData<LocationData> getLoc() {
-        return mRepository.getLoc();
-    }
-
     void update() {
         if (tripID != 0) {
             mRepository.update(tripID);

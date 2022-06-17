@@ -1,20 +1,16 @@
 package com.example.bikeapp;
 
-import android.util.Log;
-
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.example.bikeapp.db.AccelerometerData;
 import com.example.bikeapp.db.AppDatabase;
-import com.example.bikeapp.db.DataInstance;
 import com.example.bikeapp.db.LocationData;
 import com.example.bikeapp.db.TrackingDao;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 /**
  * Provides access to the database for app components.
@@ -25,8 +21,6 @@ public class DataRepository {
     private static volatile DataRepository instance;
 
     private final TrackingDao myDao;
-    private final MutableLiveData<AccelerometerData> accel = new MutableLiveData<>();
-    private final MutableLiveData<LocationData> location = new MutableLiveData<>();
     private final MutableLiveData<Date> start = new MutableLiveData<>();
     private final MutableLiveData<Date> end = new MutableLiveData<>();
     private final MutableLiveData<Double> dist = new MutableLiveData<>();
@@ -53,36 +47,12 @@ public class DataRepository {
         return instance;
     }
 
-    void insert(DataInstance dataInstance) {
-        AppDatabase.getExecutor().execute(() -> dataInstance.insert(myDao));
-    }
-
-    void delete(DataInstance dataInstance) {
-        AppDatabase.getExecutor().execute(() -> dataInstance.delete(myDao));
-    }
-
     void insertAccelBatch(List<AccelerometerData> accelList) {
         AppDatabase.getExecutor().execute(() -> myDao.insertAccelBatch(accelList));
     }
 
     void insertLocBatch(List<LocationData> locList) {
         AppDatabase.getExecutor().execute(() -> myDao.insertLocBatch(locList));
-    }
-
-    LiveData<AccelerometerData> getAccel() {
-        return accel;
-    }
-
-    LiveData<LocationData> getLoc() {
-        return location;
-    }
-
-    void setAccel(AccelerometerData acc) {
-        accel.setValue(acc);
-    }
-
-    void setLoc(LocationData loc) {
-        location.setValue(loc);
     }
 
     List<AccelerometerData> getAccelList(long minTime) {
@@ -119,6 +89,11 @@ public class DataRepository {
         return bumpiness;
     }
 
+    /**
+     * Update the LiveData objects with the trip summary information
+     * corresponding to the given tripID.
+     * @param tripID - the trip to get information about
+     */
     void update(int tripID) {
         AppDatabase.getExecutor().execute(() -> {
             Date tempStart = new Date(myDao.getTripStart(tripID));
@@ -132,6 +107,11 @@ public class DataRepository {
         });
     }
 
+    /**
+     * Get the total distance travelled in the trip.
+     * @param locs - list of location instances
+     * @return dist - the distance travelled in km
+     */
     private double getDistance(List<LocationData> locs) {
         if (locs.size() < 2) {
             return 0;
@@ -147,6 +127,13 @@ public class DataRepository {
         return dist;
     }
 
+    /**
+     * Get the distance between a pair of location instances.
+     * Uses the Haversine formula to get the Great Circle Distance.
+     * @param loc1 - the first location point
+     * @param loc2 - the second location point
+     * @return the distance between them in km
+     */
     private double getPairDist(LocationData loc1, LocationData loc2) {
         final int r = 6371; // Earth's radius
         double dLat = Math.toRadians(loc2.latitude - loc1.latitude);

@@ -197,14 +197,9 @@ public class TrackingService extends Service implements SensorEventListener, Loc
             linear_acceleration[2] = event.values[2] - gravity[2];
         }
         AccelerometerData acc = new AccelerometerData(date.getTime(), linear_acceleration, tripID);
-        //Log.d("Service", "Accel");
-        repository.setAccel(acc);
         if (isTracking) {
-            //Log.d(TAG, String.format("%d", date.getTime()));
-            //Log.d(TAG, String.format(Locale.getDefault(), "Size: %d", accelCache.size()));
             accelCache.add(acc);
             if (accelCache.size() == 150) {
-                //Log.d(TAG, "INSERTING ACCEL");
                 numInserted += 150;
                 repository.insertAccelBatch(accelCache);
                 accelCache = new ArrayList<>();
@@ -233,7 +228,7 @@ public class TrackingService extends Service implements SensorEventListener, Loc
     public void onLocationChanged(@NonNull Location loc) {
         Date date = new Date();
         LocationData locData = new LocationData(date.getTime(), loc.getLatitude(), loc.getLongitude(), tripID);
-        repository.setLoc(locData);
+        //repository.setLoc(locData);
         if (isTracking) {
             //repository.insert(locData);
             locCache.add(locData);
