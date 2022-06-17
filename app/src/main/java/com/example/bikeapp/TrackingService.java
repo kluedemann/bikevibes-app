@@ -205,6 +205,7 @@ public class TrackingService extends Service implements SensorEventListener, Loc
         //Log.d("Service", "Accel");
         repository.setAccel(acc);
         if (isTracking) {
+            //Log.d(TAG, String.format("%d", date.getTime()));
             //Log.d(TAG, String.format(Locale.getDefault(), "Size: %d", accelCache.size()));
             accelCache.add(acc);
             if (accelCache.size() == 150) {

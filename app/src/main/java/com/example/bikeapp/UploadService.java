@@ -128,6 +128,7 @@ public class UploadService extends Service {
     private void uploadData() {
         // Query data
 
+        //Log.d(TAG, String.format("%d", minTime));
         List<LocationData> locations = repository.getLocList(minTime);
         List<AccelerometerData> accel_readings = repository.getAccelList(minTime);
         minTime = repository.getMaxTime();
@@ -188,9 +189,9 @@ public class UploadService extends Service {
             //Log.d(TAG, String.format("SUCCESS: %s", isSuccess));
             boolean isSuccess = response.optBoolean(getString(R.string.HTTP_success_key), false);
             requestCompleted(isSuccess);
-            if (isSuccess) {
-                repository.delete(data);
-            }
+//            if (isSuccess) {
+//                repository.delete(data);
+//            }
         }, error -> {
             // onErrorResponse: Called upon receiving an error response
             Log.e(TAG, error.toString());
@@ -205,7 +206,7 @@ public class UploadService extends Service {
                 uploadCompleted(intent);
             } else if (error instanceof ServerError && error.networkResponse.statusCode == 500) {
                 // Discard local copy if server has duplicate data
-                repository.delete(data);
+//                repository.delete(data);
             }
             requestCompleted(false);
         });
@@ -260,6 +261,9 @@ public class UploadService extends Service {
         stopSelf();
     }
 
+    /**
+     * Save the new minimum timestamp upon uploading data.
+     */
     private void writePrefs() {
         final String PREFS = getString(R.string.preference_file_key);
         final String MIN_TIME_KEY = getString(R.string.prefs_time_key);
