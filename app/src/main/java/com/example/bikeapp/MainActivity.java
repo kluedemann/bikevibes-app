@@ -17,10 +17,19 @@ import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import org.osmdroid.api.IMapController;
+import org.osmdroid.config.Configuration;
+import org.osmdroid.config.DefaultConfigurationProvider;
+import org.osmdroid.tileprovider.tilesource.ThunderforestTileSource;
+import org.osmdroid.tileprovider.util.StorageUtils;
+import org.osmdroid.util.GeoPoint;
+import org.osmdroid.views.MapView;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -37,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
     private Button uploadButton;
     private TrackingService trackingService;
     private boolean isBound;
+    private MapView map = null;
 
     // Receiver that listens for when the upload task is finished
     private final BroadcastReceiver bReceiver = new BroadcastReceiver() {
@@ -77,9 +87,23 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Context ctx = getApplicationContext();
+        Configuration.getInstance().load(ctx, PreferenceManager.getDefaultSharedPreferences(ctx));
         setContentView(R.layout.activity_main);
 
         Log.d(TAG, "Created!");
+
+        map = (MapView) findViewById(R.id.mapView);
+        map.setTileSource(new ThunderforestTileSource(ctx, ThunderforestTileSource.NEIGHBOURHOOD));
+        map.setMultiTouchControls(true);
+        map.setTilesScaledToDpi(true);
+
+        IMapController mapController = map.getController();
+        mapController.setZoom(12f);
+        GeoPoint startPoint = new GeoPoint(53.5351, -113.4938);
+        mapController.setCenter(startPoint);
+
+        Configuration.getInstance().setUserAgentValue(BuildConfig.APPLICATION_ID);
 
         // Collect Text boxes to display data
         dataViews[0] = findViewById(R.id.dateTextView);
@@ -102,6 +126,10 @@ public class MainActivity extends AppCompatActivity {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
                 && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+        }
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 2);
         }
 
         // Handle Tracking switch
@@ -144,6 +172,8 @@ public class MainActivity extends AppCompatActivity {
         LocalBroadcastManager.getInstance(getApplicationContext())
                 .registerReceiver(bReceiver, new IntentFilter(UploadService.getAction()));
         uploadButton.setEnabled(true);
+
+        map.onResume();
     }
 
     /**
@@ -161,6 +191,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         LocalBroadcastManager.getInstance(getApplicationContext()).unregisterReceiver(bReceiver);
+        map.onPause();
     }
 
     /**
