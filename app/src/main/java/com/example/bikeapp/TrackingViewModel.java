@@ -7,7 +7,11 @@ import android.content.SharedPreferences;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 
+import org.osmdroid.util.GeoPoint;
+import org.osmdroid.views.overlay.Polyline;
+
 import java.util.Date;
+import java.util.List;
 
 /**
  * Contains the business logic for the UI.
@@ -43,6 +47,18 @@ public class TrackingViewModel extends AndroidViewModel {
 
     LiveData<Double> getBumpiness() {
         return mRepository.getBumpiness();
+    }
+
+    LiveData<Double> getZoom() {
+        return mRepository.getZoom();
+    }
+
+    LiveData<GeoPoint> getCenter() {
+        return mRepository.getCenter();
+    }
+
+    LiveData<List<Polyline>> getLines() {
+        return mRepository.getLines();
     }
 
     void update() {

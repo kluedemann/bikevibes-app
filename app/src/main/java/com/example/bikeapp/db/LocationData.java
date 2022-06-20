@@ -4,6 +4,8 @@ import androidx.annotation.NonNull;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
+import org.osmdroid.util.GeoPoint;
+
 import java.util.Locale;
 
 /**
@@ -85,5 +87,9 @@ public class LocationData extends DataInstance {
 
     public void setTripID(int tripID) {
         this.tripID = tripID;
+    }
+
+    public GeoPoint getGeoPoint() {
+        return new GeoPoint(latitude, longitude);
     }
 }

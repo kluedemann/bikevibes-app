@@ -51,9 +51,24 @@ public interface TrackingDao {
     @Query("SELECT MAX(timestamp) FROM AccelerometerData WHERE tripID=:tripID")
     long getTripEnd(int tripID);
 
-    @Query("SELECT * FROM LocationData WHERE tripID=:tripID")
+    @Query("SELECT * FROM LocationData WHERE tripID=:tripID ORDER BY timestamp ASC")
     List<LocationData> getTripLocs(int tripID);
 
     @Query("SELECT AVG(z * z) FROM AccelerometerData WHERE tripID=:tripID")
     double getMSAccel(int tripID);
+
+    @Query("SELECT MAX(latitude) FROM LocationData WHERE tripID=:tripID")
+    double getMaxLat(int tripID);
+
+    @Query("SELECT MIN(latitude) FROM LocationData WHERE tripID=:tripID")
+    double getMinLat(int tripID);
+
+    @Query("SELECT MAX(longitude) FROM LocationData WHERE tripID=:tripID")
+    double getMaxLon(int tripID);
+
+    @Query("SELECT MIN(longitude) FROM LocationData WHERE tripID=:tripID")
+    double getMinLon(int tripID);
+
+    @Query("SELECT AVG(z * z) FROM AccelerometerData WHERE timestamp >= :start AND timestamp <= :end")
+    double getRMSTime(long start, long end);
 }

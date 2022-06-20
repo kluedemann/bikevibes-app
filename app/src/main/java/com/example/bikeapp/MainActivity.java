@@ -15,6 +15,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
@@ -25,15 +26,16 @@ import android.widget.Toast;
 
 import org.osmdroid.api.IMapController;
 import org.osmdroid.config.Configuration;
-import org.osmdroid.config.DefaultConfigurationProvider;
 import org.osmdroid.tileprovider.tilesource.ThunderforestTileSource;
-import org.osmdroid.tileprovider.util.StorageUtils;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
+import org.osmdroid.views.overlay.Polyline;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -93,18 +95,6 @@ public class MainActivity extends AppCompatActivity {
 
         Log.d(TAG, "Created!");
 
-        map = (MapView) findViewById(R.id.mapView);
-        map.setTileSource(new ThunderforestTileSource(ctx, ThunderforestTileSource.NEIGHBOURHOOD));
-        map.setMultiTouchControls(true);
-        map.setTilesScaledToDpi(true);
-
-        IMapController mapController = map.getController();
-        mapController.setZoom(12f);
-        GeoPoint startPoint = new GeoPoint(53.5351, -113.4938);
-        mapController.setCenter(startPoint);
-
-        Configuration.getInstance().setUserAgentValue(BuildConfig.APPLICATION_ID);
-
         // Collect Text boxes to display data
         dataViews[0] = findViewById(R.id.dateTextView);
         dataViews[1] = findViewById(R.id.bumpTextView);
@@ -113,6 +103,13 @@ public class MainActivity extends AppCompatActivity {
         dataViews[4] = findViewById(R.id.distTextView);
         dataViews[5] = findViewById(R.id.speedTextView);
 
+        Configuration.getInstance().setUserAgentValue(BuildConfig.APPLICATION_ID);
+        map = (MapView) findViewById(R.id.mapView);
+        map.setTileSource(new ThunderforestTileSource(ctx, ThunderforestTileSource.NEIGHBOURHOOD));
+        map.setMultiTouchControls(true);
+        map.setTilesScaledToDpi(true);
+        //map.post(this::updateMap);
+
         // Setup ViewModel and live data
         TrackingViewModel mViewModel = new ViewModelProvider(this).get(TrackingViewModel.class);
         mViewModel.getStart().observe(this, this::setStartText);
@@ -120,6 +117,9 @@ public class MainActivity extends AppCompatActivity {
         mViewModel.getDist().observe(this, this::setDistText);
         mViewModel.getSpeed().observe(this, this::setSpeedText);
         mViewModel.getBumpiness().observe(this, this::setBumpText);
+        mViewModel.getZoom().observe(this, this::updateZoom);
+        mViewModel.getCenter().observe(this, this::updateCenter);
+        mViewModel.getLines().observe(this, this::updateLines);
         mViewModel.update();
 
         // Request location permissions
@@ -276,5 +276,37 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
         }
         uploadButton.setEnabled(true);
+    }
+
+    private void updateZoom(Double zoom) {
+        map.getController().setZoom(zoom);
+    }
+
+    private void updateCenter(GeoPoint center) {
+        map.getController().setCenter(center);
+    }
+
+    private void updateLines(List<Polyline> lines) {
+        map.getOverlayManager().clear();
+        for (int i = 0; i < lines.size(); i++) {
+            map.getOverlayManager().add(lines.get(i));
+        }
+    }
+
+    private void updateMap() {
+        IMapController mapController = map.getController();
+        mapController.setZoom(12f);
+        GeoPoint startPoint = new GeoPoint(53.5351, -113.4938);
+        mapController.setCenter(startPoint);
+
+        map.getOverlayManager().clear();
+        List<GeoPoint> geoPoints = new ArrayList<>();
+        geoPoints.add(new GeoPoint(53.52, -113.51));
+        geoPoints.add(new GeoPoint(53.55, -113.46));
+        Polyline line = new Polyline();
+        line.setPoints(geoPoints);
+        line.setColor(Color.parseColor("#FF00FF00"));
+        line.setWidth(5f);
+        map.getOverlayManager().add(line);
     }
 }
