@@ -15,10 +15,10 @@ public class LocationData extends DataInstance {
     private static final String URL_TEMPLATE = "http://162.246.157.171:8080/upload/location?user_id=%s&time_stamp=%d&trip_id=%d&latitude=%f&longitude=%f";
 
     @PrimaryKey
-    public long timestamp;
-    public double latitude;
-    public double longitude;
-    public int tripID;
+    private long timestamp;
+    private double latitude;
+    private double longitude;
+    private int tripID;
 
     public LocationData(long timestamp, double latitude, double longitude, int tripID) {
         this.timestamp = timestamp;
@@ -53,5 +53,37 @@ public class LocationData extends DataInstance {
     @Override
     public void insert(@NonNull TrackingDao myDao) {
         myDao.insertLocation(this);
+    }
+
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public double getLatitude() {
+        return latitude;
+    }
+
+    public double getLongitude() {
+        return longitude;
+    }
+
+    public int getTripID() {
+        return tripID;
+    }
+
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    public void setLatitude(double latitude) {
+        this.latitude = latitude;
+    }
+
+    public void setLongitude(double longitude) {
+        this.longitude = longitude;
+    }
+
+    public void setTripID(int tripID) {
+        this.tripID = tripID;
     }
 }

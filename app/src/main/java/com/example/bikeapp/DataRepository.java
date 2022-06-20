@@ -136,11 +136,11 @@ public class DataRepository {
      */
     private double getPairDist(LocationData loc1, LocationData loc2) {
         final int r = 6371; // Earth's radius
-        double dLat = Math.toRadians(loc2.latitude - loc1.latitude);
-        double dLon = Math.toRadians(loc2.longitude - loc1.longitude);
+        double dLat = Math.toRadians(loc2.getLatitude() - loc1.getLatitude());
+        double dLon = Math.toRadians(loc2.getLongitude() - loc1.getLongitude());
         double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
                 + Math.sin(dLon / 2) * Math.sin(dLon / 2)
-                * Math.cos(Math.toRadians(loc1.latitude)) * Math.cos(Math.toRadians(loc2.latitude));
+                * Math.cos(Math.toRadians(loc1.getLatitude())) * Math.cos(Math.toRadians(loc2.getLatitude()));
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         //Log.d("Distance", String.format(Locale.getDefault(), "%f, %f, %f", dLat, dLon, r*c));
         return r * c;

@@ -15,11 +15,11 @@ public class AccelerometerData extends DataInstance {
     private static final String URL_TEMPLATE = "http://162.246.157.171:8080/upload/accelerometer?user_id=%s&time_stamp=%d&trip_id=%d&x_accel=%f&y_accel=%f&z_accel=%f";
 
     @PrimaryKey
-    public long timestamp;
-    public float x;
-    public float y;
-    public float z;
-    public int tripID;
+    private long timestamp;
+    private float x;
+    private float y;
+    private float z;
+    private int tripID;
 
     public AccelerometerData(long timestamp, float x, float y, float z, int tripID) {
         this.timestamp = timestamp;
@@ -63,5 +63,45 @@ public class AccelerometerData extends DataInstance {
     @Override
     public void insert(@NonNull TrackingDao myDao) {
         myDao.insertAccel(this);
+    }
+
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public float getX() {
+        return x;
+    }
+
+    public float getY() {
+        return y;
+    }
+
+    public float getZ() {
+        return z;
+    }
+
+    public int getTripID() {
+        return tripID;
+    }
+
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    public void setX(float x) {
+        this.x = x;
+    }
+
+    public void setY(float y) {
+        this.y = y;
+    }
+
+    public void setZ(float z) {
+        this.z = z;
+    }
+
+    public void setTripID(int tripID) {
+        this.tripID = tripID;
     }
 }
