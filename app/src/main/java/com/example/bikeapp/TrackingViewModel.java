@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 import androidx.lifecycle.AndroidViewModel;
+import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LiveData;
 
 import org.osmdroid.util.GeoPoint;
@@ -22,6 +23,7 @@ public class TrackingViewModel extends AndroidViewModel {
     private final DataRepository mRepository;
     private int tripID;
     private int maxID;
+    private int minID = 1;
 
     public TrackingViewModel(Application application) {
         super(application);
@@ -29,6 +31,7 @@ public class TrackingViewModel extends AndroidViewModel {
         mRepository = app.getRepository();
         getTripID();
     }
+
 
     LiveData<Date> getStart() {
         return mRepository.getStart();
@@ -62,14 +65,22 @@ public class TrackingViewModel extends AndroidViewModel {
         return mRepository.getLines();
     }
 
+    LiveData<Integer> getMinTrip() {return mRepository.getMinTrip();}
+
     void update() {
         if (tripID != 0) {
             mRepository.update(tripID);
         }
     }
 
+    void updateMinTrip(Integer minTrip) {
+        if (minTrip > 1) {
+            minID = minTrip;
+        }
+    }
+
     boolean decrement() {
-        if (tripID > 1) {
+        if (tripID > minID) {
             tripID--;
             update();
             return true;

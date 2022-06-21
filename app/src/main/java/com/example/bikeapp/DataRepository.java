@@ -36,7 +36,7 @@ public class DataRepository {
     private final MutableLiveData<Double> zoom = new MutableLiveData<>();
     private final MutableLiveData<GeoPoint> center = new MutableLiveData<>();
     private final MutableLiveData<List<Polyline>> lines = new MutableLiveData<>();
-    private int minTripID;
+    private final MutableLiveData<Integer> minTripID = new MutableLiveData<>();
 
     DataRepository(@NonNull final AppDatabase database) {
         myDao = database.myDao();
@@ -152,13 +152,13 @@ public class DataRepository {
         double lonDif = maxLon - minLon;
 
         // Find the largest tile that the entire trip can fit into and add 1 level
-        int zoomLat = Math.min((int) (-Math.log(latDif / 180) / Math.log(2)) + 1, 20);
-        int zoomLon = Math.min((int) (-Math.log(lonDif / 360) / Math.log(2)) + 1, 20);
-        zoom.postValue((double) Math.min(zoomLat, zoomLon));
+        int zoomLat = Math.min((int) ((-Math.log(latDif / 180) / Math.log(2)) + 0.5), 20);
+        int zoomLon = Math.min((int) ((-Math.log(lonDif / 360) / Math.log(2)) + 0.5), 20);
+
 
         double centerLat = (maxLat + minLat) / 2;
         double centerLon = (maxLon + minLon) / 2;
-        center.postValue(new GeoPoint(centerLat, centerLon));
+
 
         // Calculate center position
         ArrayList<GeoPoint> points = new ArrayList<>();
@@ -185,10 +185,12 @@ public class DataRepository {
             Polyline line = new Polyline();
             line.setPoints(points.subList(i, i + 2));
             line.setColor(getColor(accels[i], max));
-            line.setWidth(5f);
+            line.setWidth(10f);
             temp.add(line);
         }
         lines.postValue(temp);
+        zoom.postValue((double) Math.min(zoomLat, zoomLon));
+        center.postValue(new GeoPoint(centerLat, centerLon));
     }
 
     private int getColor(double value, double max) {
@@ -255,7 +257,8 @@ public class DataRepository {
         return 0;
     }
 
-    public int getMinTrip() {
-        return 1;
+    public LiveData<Integer> getMinTrip() {
+        AppDatabase.getExecutor().execute(() -> minTripID.postValue(myDao.getMinTrip()));
+        return minTripID;
     }
 }
