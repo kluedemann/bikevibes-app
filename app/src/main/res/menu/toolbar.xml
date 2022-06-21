@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+
+    <item
+        android:id="@+id/action_previous"
+        android:icon="@drawable/ic_baseline_chevron_left_24"
+        android:title="@string/previous_button_title"
+        app:showAsAction="ifRoom"
+        />
+
+    <item
+        android:id="@+id/action_next"
+        android:icon="@drawable/ic_baseline_chevron_right_24"
+        android:title="@string/next_button_title"
+        app:showAsAction="ifRoom"
+        />
+</menu>

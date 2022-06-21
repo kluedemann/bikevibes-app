@@ -3,6 +3,7 @@ package com.example.bikeapp;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
+import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -20,6 +21,8 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -49,6 +52,7 @@ public class MainActivity extends AppCompatActivity {
     private TrackingService trackingService;
     private boolean isBound;
     private MapView map = null;
+    private TrackingViewModel viewModel;
 
     // Receiver that listens for when the upload task is finished
     private final BroadcastReceiver bReceiver = new BroadcastReceiver() {
@@ -92,6 +96,8 @@ public class MainActivity extends AppCompatActivity {
         Context ctx = getApplicationContext();
         Configuration.getInstance().load(ctx, PreferenceManager.getDefaultSharedPreferences(ctx));
         setContentView(R.layout.activity_main);
+        Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
+        setSupportActionBar(myToolbar);
 
         Log.d(TAG, "Created!");
 
@@ -111,16 +117,16 @@ public class MainActivity extends AppCompatActivity {
         //map.post(this::updateMap);
 
         // Setup ViewModel and live data
-        TrackingViewModel mViewModel = new ViewModelProvider(this).get(TrackingViewModel.class);
-        mViewModel.getStart().observe(this, this::setStartText);
-        mViewModel.getEnd().observe(this, this::setEndText);
-        mViewModel.getDist().observe(this, this::setDistText);
-        mViewModel.getSpeed().observe(this, this::setSpeedText);
-        mViewModel.getBumpiness().observe(this, this::setBumpText);
-        mViewModel.getZoom().observe(this, this::updateZoom);
-        mViewModel.getCenter().observe(this, this::updateCenter);
-        mViewModel.getLines().observe(this, this::updateLines);
-        mViewModel.update();
+        viewModel = new ViewModelProvider(this).get(TrackingViewModel.class);
+        viewModel.getStart().observe(this, this::setStartText);
+        viewModel.getEnd().observe(this, this::setEndText);
+        viewModel.getDist().observe(this, this::setDistText);
+        viewModel.getSpeed().observe(this, this::setSpeedText);
+        viewModel.getBumpiness().observe(this, this::setBumpText);
+        viewModel.getZoom().observe(this, this::updateZoom);
+        viewModel.getCenter().observe(this, this::updateCenter);
+        viewModel.getLines().observe(this, this::updateLines);
+        viewModel.update();
 
         // Request location permissions
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
@@ -141,6 +147,7 @@ public class MainActivity extends AppCompatActivity {
                 getApplicationContext().startService(intent);
             } else if (!isActive && trackingService.getTracking()) {
                 trackingService.disableTracking();
+                viewModel.incrementMax();
             }
         });
 
@@ -308,5 +315,27 @@ public class MainActivity extends AppCompatActivity {
         line.setColor(Color.parseColor("#FF00FF00"));
         line.setWidth(5f);
         map.getOverlayManager().add(line);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.toolbar, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.action_next) {
+            if (!viewModel.increment()) {
+                Toast.makeText(getApplicationContext(), getString(R.string.last_trip), Toast.LENGTH_SHORT).show();
+            }
+            return true;
+        } else if (item.getItemId() == R.id.action_previous) {
+            if (!viewModel.decrement()) {
+                Toast.makeText(getApplicationContext(), getString(R.string.first_trip), Toast.LENGTH_SHORT).show();
+            }
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 }

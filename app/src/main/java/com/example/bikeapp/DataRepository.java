@@ -36,6 +36,7 @@ public class DataRepository {
     private final MutableLiveData<Double> zoom = new MutableLiveData<>();
     private final MutableLiveData<GeoPoint> center = new MutableLiveData<>();
     private final MutableLiveData<List<Polyline>> lines = new MutableLiveData<>();
+    private int minTripID;
 
     DataRepository(@NonNull final AppDatabase database) {
         myDao = database.myDao();
@@ -132,7 +133,7 @@ public class DataRepository {
 
     private void updateMap(List<LocationData> locs, int tripID) {
         if (locs.size() < 2) {
-            zoom.postValue((double)12);
+            zoom.postValue((double)10);
             center.postValue(new GeoPoint(53.5351, -113.4938));
             lines.postValue(new ArrayList<>());
             return;
@@ -252,5 +253,9 @@ public class DataRepository {
             return dist / hours;
         }
         return 0;
+    }
+
+    public int getMinTrip() {
+        return 1;
     }
 }

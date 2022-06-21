@@ -21,6 +21,7 @@ public class TrackingViewModel extends AndroidViewModel {
 
     private final DataRepository mRepository;
     private int tripID;
+    private int maxID;
 
     public TrackingViewModel(Application application) {
         super(application);
@@ -67,11 +68,34 @@ public class TrackingViewModel extends AndroidViewModel {
         }
     }
 
+    boolean decrement() {
+        if (tripID > 1) {
+            tripID--;
+            update();
+            return true;
+        }
+        return false;
+    }
+
+    boolean increment() {
+        if (tripID < maxID) {
+            tripID++;
+            update();
+            return true;
+        }
+        return false;
+    }
+
+    void incrementMax() {
+        maxID++;
+    }
+
     private void getTripID() {
         Application app = getApplication();
         String PREFS = app.getString(R.string.preference_file_key);
         SharedPreferences sharedPref = app.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         tripID = sharedPref.getInt(app.getString(R.string.prefs_trip_key), 0);
+        maxID = tripID;
     }
 
 

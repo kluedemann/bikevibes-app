@@ -71,4 +71,7 @@ public interface TrackingDao {
 
     @Query("SELECT AVG(z * z) FROM AccelerometerData WHERE timestamp >= :start AND timestamp <= :end")
     double getRMSTime(long start, long end);
+
+    @Query("SELECT MIN(tripID) FROM AccelerometerData")
+    int getMinTrip();
 }
