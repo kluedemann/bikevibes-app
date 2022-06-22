@@ -9,12 +9,6 @@ import androidx.lifecycle.LiveData;
 
 import com.example.bikeapp.db.TripSummary;
 
-import org.osmdroid.util.GeoPoint;
-import org.osmdroid.views.overlay.Polyline;
-
-import java.util.Date;
-import java.util.List;
-
 /**
  * Contains the business logic for the UI.
  * Retrieves data from the repository and provides it to the MainActivity.
@@ -34,38 +28,6 @@ public class TrackingViewModel extends AndroidViewModel {
     }
 
     // ************************** LiveData Getter Methods ***********************************
-    LiveData<Date> getStart() {
-        return mRepository.getStart();
-    }
-
-    LiveData<Date> getEnd() {
-        return mRepository.getEnd();
-    }
-
-    LiveData<Double> getDist() {
-        return mRepository.getDist();
-    }
-
-    LiveData<Double> getSpeed() {
-        return mRepository.getSpeed();
-    }
-
-    LiveData<Double> getBumpiness() {
-        return mRepository.getBumpiness();
-    }
-
-    LiveData<Double> getZoom() {
-        return mRepository.getZoom();
-    }
-
-    LiveData<GeoPoint> getCenter() {
-        return mRepository.getCenter();
-    }
-
-    LiveData<List<Polyline>> getLines() {
-        return mRepository.getLines();
-    }
-
     LiveData<Integer> getMinTrip() {return mRepository.getMinTrip();}
 
     LiveData<TripSummary> getTripSummary() {

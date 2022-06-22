@@ -115,18 +115,9 @@ public class MainActivity extends AppCompatActivity {
         map.setTileSource(new ThunderforestTileSource(ctx, ThunderforestTileSource.NEIGHBOURHOOD));
         map.setMultiTouchControls(true);
         map.setTilesScaledToDpi(true);
-        //map.post(this::updateMap);
 
         // Setup ViewModel and live data
         viewModel = new ViewModelProvider(this).get(TrackingViewModel.class);
-//        viewModel.getStart().observe(this, this::setStartText);
-//        viewModel.getEnd().observe(this, this::setEndText);
-//        viewModel.getDist().observe(this, this::setDistText);
-//        viewModel.getSpeed().observe(this, this::setSpeedText);
-//        viewModel.getBumpiness().observe(this, this::setBumpText);
-//        viewModel.getZoom().observe(this, this::updateZoom);
-//        viewModel.getCenter().observe(this, this::updateCenter);
-//        viewModel.getLines().observe(this, this::updateLines);
         viewModel.getMinTrip().observe(this, viewModel::setMinTrip);
         viewModel.getTripSummary().observe(this, this::updateTrip);
         viewModel.update();
@@ -204,15 +195,13 @@ public class MainActivity extends AppCompatActivity {
      * @param date - the Date object from the first accelerometer reading in the trip
      */
     private void setStartText(Date date) {
-        if (date != null) {
-            String format = "MMMM d, yyyy";
-            DateFormat df = new SimpleDateFormat(format, Locale.getDefault());
-            dataViews[0].setText(df.format(date));
+        String format = "MMM. d, yyyy";
+        DateFormat df = new SimpleDateFormat(format, Locale.getDefault());
+        dataViews[0].setText(df.format(date));
 
-            format = "hh:mm a";
-            df = new SimpleDateFormat(format, Locale.getDefault());
-            dataViews[2].setText(df.format(date));
-        }
+        format = "hh:mm a";
+        df = new SimpleDateFormat(format, Locale.getDefault());
+        dataViews[2].setText(df.format(date));
     }
 
     /**
@@ -220,11 +209,9 @@ public class MainActivity extends AppCompatActivity {
      * @param date - the Date object from the last accelerometer reading in the trip.
      */
     private void setEndText(Date date) {
-        if (date != null) {
-            final String format = "hh:mm a";
-            final DateFormat df = new SimpleDateFormat(format, Locale.getDefault());
-            dataViews[3].setText(df.format(date));
-        }
+        final String format = "hh:mm a";
+        final DateFormat df = new SimpleDateFormat(format, Locale.getDefault());
+        dataViews[3].setText(df.format(date));
     }
 
     /**
@@ -232,9 +219,7 @@ public class MainActivity extends AppCompatActivity {
      * @param bumpiness - the RMS of vertical acceleration over the trip
      */
     private void setBumpText(Double bumpiness) {
-        if (bumpiness != null) {
-            dataViews[1].setText(String.format(Locale.getDefault(), "%.2f m/s^2", bumpiness));
-        }
+        dataViews[1].setText(String.format(Locale.getDefault(), "%.2f m/s^2", bumpiness));
     }
 
     /**
@@ -242,9 +227,7 @@ public class MainActivity extends AppCompatActivity {
      * @param dist - the distance of the trip in km
      */
     private void setDistText(Double dist) {
-        if (dist != null) {
-            dataViews[4].setText(String.format(Locale.getDefault(), "%.2f km", dist));
-        }
+        dataViews[4].setText(String.format(Locale.getDefault(), "%.2f km", dist));
     }
 
     /**
@@ -252,9 +235,7 @@ public class MainActivity extends AppCompatActivity {
      * @param speed - the avg speed over the trip
      */
     private void setSpeedText(Double speed) {
-        if (speed != null) {
-            dataViews[5].setText(String.format(Locale.getDefault(), "%.2f km/h", speed));
-        }
+        dataViews[5].setText(String.format(Locale.getDefault(), "%.2f km/h", speed));
     }
 
     /**
@@ -287,7 +268,7 @@ public class MainActivity extends AppCompatActivity {
      * Update the zoom level of the map.
      * @param zoom - the double valued zoom level to change to
      */
-    private void updateZoom(Double zoom) {
+    private void setMapZoom(Double zoom) {
         map.getController().setZoom(zoom);
     }
 
@@ -295,7 +276,7 @@ public class MainActivity extends AppCompatActivity {
      * Update the center position of the map
      * @param center - the GeoPoint that the map should be centered to
      */
-    private void updateCenter(GeoPoint center) {
+    private void setMapCenter(GeoPoint center) {
         map.getController().setCenter(center);
     }
 
@@ -303,7 +284,7 @@ public class MainActivity extends AppCompatActivity {
      * Clear the current lines from the map and draw new ones.
      * @param lines - the new lines to be drawn to the map
      */
-    private void updateLines(@NonNull List<Polyline> lines) {
+    private void setMapLines(@NonNull List<Polyline> lines) {
         map.getOverlayManager().clear();
         for (int i = 0; i < lines.size(); i++) {
             map.getOverlayManager().add(lines.get(i));
@@ -360,14 +341,20 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void updateTrip(@NonNull TripSummary trip) {
-        setStartText(trip.getStart());
-        setEndText(trip.getEnd());
-        setDistText(trip.getDist());
-        setSpeedText(trip.getSpeed());
-        setBumpText(trip.getBumpiness());
-        updateLines(trip.getLines());
-        updateZoom(trip.getZoom());
-        updateCenter(trip.getCenter());
+    /**
+     * Update the corresponding UI elements when the current trip is changed
+     * @param trip - the representation of the current trip
+     */
+    private void updateTrip(TripSummary trip) {
+        if (trip != null) {
+            setStartText(trip.getStart());
+            setEndText(trip.getEnd());
+            setDistText(trip.getDist());
+            setSpeedText(trip.getSpeed());
+            setBumpText(trip.getBumpiness());
+            setMapLines(trip.getLines());
+            setMapZoom(trip.getZoom());
+            setMapCenter(trip.getCenter());
+        }
     }
 }

@@ -32,6 +32,12 @@ public class TripSummary {
         this.lines = new ArrayList<>();
     }
 
+    /**
+     * Return the average speed over the trip in km/h.
+     * @param start - the UNIX start time in milliseconds
+     * @param end - the UNIX end time in milliseconds
+     * @return the average speed in km/h (or zero if the duration is 0 ms)
+     */
     private double getAvgSpeed(long start, long end) {
         double hours = (end - start) / (1000 * 60 * 60f);
         if (hours != 0) {
@@ -40,6 +46,11 @@ public class TripSummary {
         return 0;
     }
 
+    /**
+     * Get the total distance travelled in the trip.
+     * @param locs - list of location instances
+     * @return dist - the distance travelled in km
+     */
     private double getDist(@NonNull List<LocationData> locs) {
         if (locs.size() < 2) {
             return 0;
@@ -55,6 +66,15 @@ public class TripSummary {
         return dist;
     }
 
+    /**
+     * Get the distance between a pair of location instances.
+     * Uses the Haversine formula to get the Great Circle Distance.
+     * Source: https://stackoverflow.com/questions/27928/calculate-distance-between-two-latitude-longitude-points-haversine-formula
+     *
+     * @param loc1 - the first location point
+     * @param loc2 - the second location point
+     * @return the distance between them in km
+     */
     private double getPairDist(@NonNull LocationData loc1, @NonNull LocationData loc2) {
         final int r = 6371; // Earth's radius
         double dLat = Math.toRadians(loc2.getLatitude() - loc1.getLatitude());
@@ -67,12 +87,19 @@ public class TripSummary {
         return r * c;
     }
 
+    /**
+     * Update the trip's map elements.
+     * @param lines - the polylines to be added to the map
+     * @param center - the location of the center of the map
+     * @param zoom - the zoom level of the map
+     */
     public void setMap(List<Polyline> lines, GeoPoint center, double zoom) {
         this.lines = lines;
         this.center = center;
         this.zoom = zoom;
     }
 
+    // *************************** Getter Methods *****************************
     public int getTripID() {
         return tripID;
     }
