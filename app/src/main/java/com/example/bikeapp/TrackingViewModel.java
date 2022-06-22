@@ -7,6 +7,8 @@ import android.content.SharedPreferences;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 
+import com.example.bikeapp.db.TripSummary;
+
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.overlay.Polyline;
 
@@ -65,6 +67,10 @@ public class TrackingViewModel extends AndroidViewModel {
     }
 
     LiveData<Integer> getMinTrip() {return mRepository.getMinTrip();}
+
+    LiveData<TripSummary> getTripSummary() {
+        return mRepository.getTripSummary();
+    }
 
     /**
      * Update the trip summary shown in the interface

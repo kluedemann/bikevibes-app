@@ -27,6 +27,8 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.bikeapp.db.TripSummary;
+
 import org.osmdroid.config.Configuration;
 import org.osmdroid.tileprovider.tilesource.ThunderforestTileSource;
 import org.osmdroid.util.GeoPoint;
@@ -117,15 +119,16 @@ public class MainActivity extends AppCompatActivity {
 
         // Setup ViewModel and live data
         viewModel = new ViewModelProvider(this).get(TrackingViewModel.class);
-        viewModel.getStart().observe(this, this::setStartText);
-        viewModel.getEnd().observe(this, this::setEndText);
-        viewModel.getDist().observe(this, this::setDistText);
-        viewModel.getSpeed().observe(this, this::setSpeedText);
-        viewModel.getBumpiness().observe(this, this::setBumpText);
-        viewModel.getZoom().observe(this, this::updateZoom);
-        viewModel.getCenter().observe(this, this::updateCenter);
-        viewModel.getLines().observe(this, this::updateLines);
+//        viewModel.getStart().observe(this, this::setStartText);
+//        viewModel.getEnd().observe(this, this::setEndText);
+//        viewModel.getDist().observe(this, this::setDistText);
+//        viewModel.getSpeed().observe(this, this::setSpeedText);
+//        viewModel.getBumpiness().observe(this, this::setBumpText);
+//        viewModel.getZoom().observe(this, this::updateZoom);
+//        viewModel.getCenter().observe(this, this::updateCenter);
+//        viewModel.getLines().observe(this, this::updateLines);
         viewModel.getMinTrip().observe(this, viewModel::setMinTrip);
+        viewModel.getTripSummary().observe(this, this::updateTrip);
         viewModel.update();
         viewModel.updateMinTrip();
 
@@ -355,5 +358,16 @@ public class MainActivity extends AppCompatActivity {
             final int REQUEST_CODE = 1;
             ActivityCompat.requestPermissions(this, toRequest.toArray(new String[0]), REQUEST_CODE);
         }
+    }
+
+    private void updateTrip(@NonNull TripSummary trip) {
+        setStartText(trip.getStart());
+        setEndText(trip.getEnd());
+        setDistText(trip.getDist());
+        setSpeedText(trip.getSpeed());
+        setBumpText(trip.getBumpiness());
+        updateLines(trip.getLines());
+        updateZoom(trip.getZoom());
+        updateCenter(trip.getCenter());
     }
 }
