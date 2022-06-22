@@ -1,7 +1,6 @@
 package com.example.bikeapp;
 
 import android.graphics.Color;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
@@ -58,28 +57,55 @@ public class DataRepository {
         return instance;
     }
 
+    /**
+     * Insert a list of accelerometer readings into the database.
+     * @param accelList - the list of data instances to insert
+     */
     void insertAccelBatch(List<AccelerometerData> accelList) {
         AppDatabase.getExecutor().execute(() -> myDao.insertAccelBatch(accelList));
     }
 
+    /**
+     * Insert a list of GPS readings into the database.
+     * @param locList - the list of GPS data points to insert
+     */
     void insertLocBatch(List<LocationData> locList) {
         AppDatabase.getExecutor().execute(() -> myDao.insertLocBatch(locList));
     }
 
+    /**
+     * Return all accelerometer readings that occurred after minTime.
+     * WARNING: This method CANNOT be called from the Main/UI thread
+     * @param minTime - the minimum UNIX timestamp in milliseconds
+     * @return - a list of AccelerometerData readings
+     */
     List<AccelerometerData> getAccelList(long minTime) {
         return myDao.getAccel(minTime);
     }
 
+    /**
+     * Return all GPS readings that occurred after minTime.
+     * WARNING: This method CANNOT be called from the Main/UI thread
+     * @param minTime - the minimum UNIX timestamp in milliseconds
+     * @return - a list of LocationData instances
+     */
     List<LocationData> getLocList(long minTime) {
         return myDao.getLocation(minTime);
     }
 
+    /**
+     * Return the maximum timestamp that currently exists in the database.
+     * Takes the maximum of both accelerometer and GPS readings.
+     * @return - the maximum UNIX timestamp in milliseconds
+     */
     long getMaxTime() {
+        // TODO: Split into two methods to account for asynchronous batch inserts
         long accTime = myDao.getMaxAccelTime();
         long locTime = myDao.getMaxLocTime();
         return Math.max(accTime, locTime);
     }
 
+    // ************************* LiveData Getter Methods ************************************
     LiveData<Date> getStart() {
         return start;
     }
@@ -131,7 +157,22 @@ public class DataRepository {
         });
     }
 
-    private void updateMap(List<LocationData> locs, int tripID) {
+    /**
+     * Update the center of the map, zoom level, and lines to draw from
+     * the list of location instances recorded during a given trip.
+     *
+     * Center is set as the midpoint between the maximum and minimum lat/long coordinates.
+     * Zoom level is determined by calculating the minimum tile size that will fit the
+     * entire trip into a single tile. Then we add 0.5 zoom levels because multiple tiles fit into
+     * the map window.
+     * Lines are taken from pairs of LocationData instances. The color is a linear gradient of
+     * the RMS of vertical acceleration from readings taken between the two GPS recordings.
+     * The gradient goes from green at 0 to red being the maximum RMS value.
+     *
+     * @param locs - the list of location instances from the trip
+     * @param tripID - the trip that is being considered
+     */
+    private void updateMap(@NonNull List<LocationData> locs, int tripID) {
         if (locs.size() < 2) {
             zoom.postValue((double)10);
             center.postValue(new GeoPoint(53.5351, -113.4938));
@@ -193,6 +234,13 @@ public class DataRepository {
         center.postValue(new GeoPoint(centerLat, centerLon));
     }
 
+    /**
+     * Return the integer color value that a segment should be colored.
+     * Uses a linear gradient with green as 0 and red as the maximum value.
+     * @param value - the value used to determine the color
+     * @param max - the maximum value for the gradient
+     * @return - the integer color value
+     */
     private int getColor(double value, double max) {
         double avg = Math.min(value, max);
         int color = (int)(avg * 510 / max);
@@ -214,7 +262,7 @@ public class DataRepository {
      * @param locs - list of location instances
      * @return dist - the distance travelled in km
      */
-    private double getDistance(List<LocationData> locs) {
+    private double getDistance(@NonNull List<LocationData> locs) {
         if (locs.size() < 2) {
             return 0;
         }
@@ -232,11 +280,13 @@ public class DataRepository {
     /**
      * Get the distance between a pair of location instances.
      * Uses the Haversine formula to get the Great Circle Distance.
+     * Source: https://stackoverflow.com/questions/27928/calculate-distance-between-two-latitude-longitude-points-haversine-formula
+     *
      * @param loc1 - the first location point
      * @param loc2 - the second location point
      * @return the distance between them in km
      */
-    private double getPairDist(LocationData loc1, LocationData loc2) {
+    private double getPairDist(@NonNull LocationData loc1, @NonNull LocationData loc2) {
         final int r = 6371; // Earth's radius
         double dLat = Math.toRadians(loc2.getLatitude() - loc1.getLatitude());
         double dLon = Math.toRadians(loc2.getLongitude() - loc1.getLongitude());
@@ -248,6 +298,13 @@ public class DataRepository {
         return r * c;
     }
 
+    /**
+     * Return the average speed over the trip in km/h.
+     * @param startTime - the UNIX start time in milliseconds
+     * @param endTime - the UNIX end time in milliseconds
+     * @param dist - the distance in km
+     * @return the average speed in km/h (or zero if the duration is 0 ms)
+     */
     private double getAvgSpeed(long startTime, long endTime, double dist) {
         double hours = (endTime - startTime) / (1000 * 60 * 60f);
         if (hours != 0) {
@@ -257,6 +314,10 @@ public class DataRepository {
         return 0;
     }
 
+    /**
+     * Get the minimum tripID in the database.
+     * @return the LiveData object containing the minimum tripID
+     */
     public LiveData<Integer> getMinTrip() {
         AppDatabase.getExecutor().execute(() -> minTripID.postValue(myDao.getMinTrip()));
         return minTripID;

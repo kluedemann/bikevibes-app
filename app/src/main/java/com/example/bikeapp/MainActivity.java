@@ -16,7 +16,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
@@ -27,7 +26,6 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.osmdroid.api.IMapController;
 import org.osmdroid.config.Configuration;
 import org.osmdroid.tileprovider.tilesource.ThunderforestTileSource;
 import org.osmdroid.util.GeoPoint;
@@ -36,7 +34,6 @@ import org.osmdroid.views.overlay.Polyline;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -286,46 +283,52 @@ public class MainActivity extends AppCompatActivity {
         uploadButton.setEnabled(true);
     }
 
+    /**
+     * Update the zoom level of the map.
+     * @param zoom - the double valued zoom level to change to
+     */
     private void updateZoom(Double zoom) {
         map.getController().setZoom(zoom);
     }
 
+    /**
+     * Update the center position of the map
+     * @param center - the GeoPoint that the map should be centered to
+     */
     private void updateCenter(GeoPoint center) {
         map.getController().setCenter(center);
     }
 
-    private void updateLines(List<Polyline> lines) {
+    /**
+     * Clear the current lines from the map and draw new ones.
+     * @param lines - the new lines to be drawn to the map
+     */
+    private void updateLines(@NonNull List<Polyline> lines) {
         map.getOverlayManager().clear();
         for (int i = 0; i < lines.size(); i++) {
             map.getOverlayManager().add(lines.get(i));
         }
     }
 
-    private void updateMap() {
-        IMapController mapController = map.getController();
-        mapController.setZoom(12f);
-        GeoPoint startPoint = new GeoPoint(53.5351, -113.4938);
-        mapController.setCenter(startPoint);
-
-        map.getOverlayManager().clear();
-        List<GeoPoint> geoPoints = new ArrayList<>();
-        geoPoints.add(new GeoPoint(53.52, -113.51));
-        geoPoints.add(new GeoPoint(53.55, -113.46));
-        Polyline line = new Polyline();
-        line.setPoints(geoPoints);
-        line.setColor(Color.parseColor("#FF00FF00"));
-        line.setWidth(5f);
-        map.getOverlayManager().add(line);
-    }
-
+    /**
+     * Inflate the toolbar menu.
+     * @param menu - the menu used in the toolbar
+     * @return - true if the menu is displayed, false otherwise
+     */
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.toolbar, menu);
         return true;
     }
 
+    /**
+     * Called when an item in the options menu (toolbar) is selected.
+     * Performs the desired action (swapping current trip).
+     * @param item - the menu item that has been selected
+     * @return - true if the action is consumed, false if the rest of the UI should handle the input
+     */
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if (item.getItemId() == R.id.action_next) {
             if (!viewModel.increment()) {
                 Toast.makeText(getApplicationContext(), getString(R.string.last_trip), Toast.LENGTH_SHORT).show();

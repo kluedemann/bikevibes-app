@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 import androidx.lifecycle.AndroidViewModel;
-import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LiveData;
 
 import org.osmdroid.util.GeoPoint;
@@ -32,7 +31,7 @@ public class TrackingViewModel extends AndroidViewModel {
         getTripID();
     }
 
-
+    // ************************** LiveData Getter Methods ***********************************
     LiveData<Date> getStart() {
         return mRepository.getStart();
     }
@@ -67,18 +66,31 @@ public class TrackingViewModel extends AndroidViewModel {
 
     LiveData<Integer> getMinTrip() {return mRepository.getMinTrip();}
 
+    /**
+     * Update the trip summary shown in the interface
+     */
     void update() {
         if (tripID != 0) {
             mRepository.update(tripID);
         }
     }
 
+    /**
+     * Update the minimum trip value that can be shown
+     * @param minTrip - the tripID of the first trip in the database
+     */
     void updateMinTrip(Integer minTrip) {
         if (minTrip > 1) {
             minID = minTrip;
         }
     }
 
+    /**
+     * Decrement the trip shown in the interface.
+     * Can only decrement if there is an earlier trip in the database.
+     * Update the trip summary shown to the interface.
+     * @return true if updated successfully, false otherwise
+     */
     boolean decrement() {
         if (tripID > minID) {
             tripID--;
@@ -88,6 +100,12 @@ public class TrackingViewModel extends AndroidViewModel {
         return false;
     }
 
+    /**
+     * Increment the trip shown in the interface.
+     * Can only increment if there is another trip after the current one.
+     * Update the trip summary shown to the interface
+     * @return true if updated successfully, false otherwise
+     */
     boolean increment() {
         if (tripID < maxID) {
             tripID++;
@@ -97,10 +115,18 @@ public class TrackingViewModel extends AndroidViewModel {
         return false;
     }
 
+    /**
+     * Increment the maximum trip that can be shown.
+     * Called when a new trip is added.
+     */
     void incrementMax() {
         maxID++;
     }
 
+    /**
+     * Get the current tripID and assign it to tripID and maxID.
+     * Accesses the value from the shared preferences file.
+     */
     private void getTripID() {
         Application app = getApplication();
         String PREFS = app.getString(R.string.preference_file_key);
@@ -108,6 +134,4 @@ public class TrackingViewModel extends AndroidViewModel {
         tripID = sharedPref.getInt(app.getString(R.string.prefs_trip_key), 0);
         maxID = tripID;
     }
-
-
 }
