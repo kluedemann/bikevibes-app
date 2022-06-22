@@ -79,7 +79,7 @@ public class TrackingViewModel extends AndroidViewModel {
      * Update the minimum trip value that can be shown
      * @param minTrip - the tripID of the first trip in the database
      */
-    void updateMinTrip(Integer minTrip) {
+    void setMinTrip(Integer minTrip) {
         if (minTrip > 1) {
             minID = minTrip;
         }
@@ -133,5 +133,12 @@ public class TrackingViewModel extends AndroidViewModel {
         SharedPreferences sharedPref = app.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         tripID = sharedPref.getInt(app.getString(R.string.prefs_trip_key), 0);
         maxID = tripID;
+    }
+
+    /**
+     * Update the minimum tripID present in the database
+     */
+    public void updateMinTrip() {
+        mRepository.updateMinTrip();
     }
 }

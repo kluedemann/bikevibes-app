@@ -134,6 +134,10 @@ public class DataRepository {
         return lines;
     }
 
+    LiveData<Integer> getMinTrip() {
+        return minTripID;
+    }
+
     /**
      * Update the LiveData objects with the trip summary information
      * corresponding to the given tripID.
@@ -151,7 +155,6 @@ public class DataRepository {
             speed.postValue(getAvgSpeed(tempStart.getTime(), tempEnd.getTime(), tempDist));
             bumpiness.postValue(Math.sqrt(myDao.getMSAccel(tripID)));
 
-            // Temporary values
             updateMap(locs, tripID);
 
         });
@@ -187,7 +190,7 @@ public class DataRepository {
 
         //Log.d("MAP", String.format("%f, %f, %f, %f", maxLat, minLat, maxLon, minLon));
 
-        // Calculate the map's position
+        // Calculate the map's zoom level
         // See https://wiki.openstreetmap.org/wiki/Zoom_levels
         double latDif = maxLat - minLat;
         double lonDif = maxLon - minLon;
@@ -197,10 +200,23 @@ public class DataRepository {
         int zoomLon = Math.min((int) ((-Math.log(lonDif / 360) / Math.log(2)) + 0.5), 20);
 
 
+        // Calculate the map's center position
         double centerLat = (maxLat + minLat) / 2;
         double centerLon = (maxLon + minLon) / 2;
 
+        // Update the values
+        lines.postValue(getLines(locs));
+        zoom.postValue((double) Math.min(zoomLat, zoomLon));
+        center.postValue(new GeoPoint(centerLat, centerLon));
+    }
 
+    /**
+     * Get the lines to draw to the map from the list of location instances
+     * @param locs - the list of LocationData instances
+     * @return the list of polylines to draw to the map
+     */
+    @NonNull
+    private List<Polyline> getLines(@NonNull List<LocationData> locs) {
         // Calculate center position
         ArrayList<GeoPoint> points = new ArrayList<>();
         for (int i = 0; i < locs.size(); i++) {
@@ -229,9 +245,7 @@ public class DataRepository {
             line.setWidth(10f);
             temp.add(line);
         }
-        lines.postValue(temp);
-        zoom.postValue((double) Math.min(zoomLat, zoomLon));
-        center.postValue(new GeoPoint(centerLat, centerLon));
+        return temp;
     }
 
     /**
@@ -315,11 +329,9 @@ public class DataRepository {
     }
 
     /**
-     * Get the minimum tripID in the database.
-     * @return the LiveData object containing the minimum tripID
+     * Update the minimum tripID from the database.
      */
-    public LiveData<Integer> getMinTrip() {
+    public void updateMinTrip() {
         AppDatabase.getExecutor().execute(() -> minTripID.postValue(myDao.getMinTrip()));
-        return minTripID;
     }
 }

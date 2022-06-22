@@ -123,8 +123,9 @@ public class MainActivity extends AppCompatActivity {
         viewModel.getZoom().observe(this, this::updateZoom);
         viewModel.getCenter().observe(this, this::updateCenter);
         viewModel.getLines().observe(this, this::updateLines);
-        viewModel.getMinTrip().observe(this, viewModel::updateMinTrip);
+        viewModel.getMinTrip().observe(this, viewModel::setMinTrip);
         viewModel.update();
+        viewModel.updateMinTrip();
 
         // Request location permissions
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
