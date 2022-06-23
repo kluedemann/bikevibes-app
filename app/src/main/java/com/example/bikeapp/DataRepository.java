@@ -194,4 +194,11 @@ public class DataRepository {
         }
         return segments;
     }
+
+    public void deleteAll() {
+        AppDatabase.getExecutor().execute(() -> {
+            myDao.deleteAllAccel();
+            myDao.deleteAllLoc();
+        });
+    }
 }

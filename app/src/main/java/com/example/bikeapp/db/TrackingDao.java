@@ -74,4 +74,10 @@ public interface TrackingDao {
 
     @Query("SELECT MIN(tripID) FROM AccelerometerData")
     int getMinTrip();
+
+    @Query("DELETE FROM AccelerometerData")
+    void deleteAllAccel();
+
+    @Query("DELETE FROM LocationData")
+    void deleteAllLoc();
 }

@@ -1,0 +1,64 @@
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory app:title="Privacy">
+
+        <Preference
+            app:title="Data Policy"
+            app:summary="We keep no identifying information on our server other than your anonymous user ID. You may request that your data be deleted from the server at any time."
+            />
+
+        <SeekBarPreference
+            app:key="privacy_radius"
+            app:title="Blackout Radius"
+            app:summary="Distance in meters around the start and end of a trip in which data is not tracked"
+            app:showSeekBarValue="true"
+            android:max="500"
+            app:defaultValue="50"
+            app:seekBarIncrement="10"
+            />
+
+        <Preference
+            app:key="user_id"
+            app:title="User ID"
+            app:summary="your user id"
+            />
+
+        <Preference
+            app:title="Delete My Data"
+            app:summary="Please email us with your user id so we can delete it for you"/>
+
+
+
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="Storage">
+        <Preference
+            app:key="delete_local"
+            app:title="Delete Local Data"/>
+
+
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="Contact">
+
+        <Preference
+            app:key="email"
+            app:title="Email Us"
+            app:summary="kluedema@ualberta.ca"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="Acknowledgements">
+        <Preference
+            app:title="Cybera Rapid Access Cloud"
+            app:summary="Provided server hosting"/>
+        <Preference
+            app:title="Thunderforest"
+            app:summary="Map tile provider"/>
+        <Preference
+            app:title="Natural Sciences and Engineering Research Council of Canada"
+            app:summary="Provided research funding"/>
+    </PreferenceCategory>
+
+
+</PreferenceScreen>

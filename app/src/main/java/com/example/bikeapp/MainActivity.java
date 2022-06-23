@@ -195,7 +195,7 @@ public class MainActivity extends AppCompatActivity {
      * @param date - the Date object from the first accelerometer reading in the trip
      */
     private void setStartText(Date date) {
-        String format = "MMM. d, yyyy";
+        String format = "MMM d, yyyy";
         DateFormat df = new SimpleDateFormat(format, Locale.getDefault());
         dataViews[0].setText(df.format(date));
 
@@ -299,7 +299,7 @@ public class MainActivity extends AppCompatActivity {
      */
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.toolbar, menu);
+        getMenuInflater().inflate(R.menu.main_menu, menu);
         return true;
     }
 
@@ -320,6 +320,12 @@ public class MainActivity extends AppCompatActivity {
             if (!viewModel.decrement()) {
                 Toast.makeText(getApplicationContext(), getString(R.string.first_trip), Toast.LENGTH_SHORT).show();
             }
+            return true;
+        } else if (item.getItemId() == R.id.action_settings) {
+            Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
+            //intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
+            startActivity(intent);
+            //overridePendingTransition(0, 0);
             return true;
         }
         return super.onOptionsItemSelected(item);

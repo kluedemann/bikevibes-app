@@ -14,7 +14,7 @@
         app:title="BikeApp"
         app:titleTextColor="?attr/colorOnPrimary"
         app:layout_constraintTop_toTopOf="parent"
-        app:menu="@menu/toolbar"/>
+        app:menu="@menu/main_menu"/>
 
     <org.osmdroid.views.MapView
         android:id="@+id/mapView"
