@@ -9,13 +9,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Segment {
+    private int tripID;
     private double lat1;
     private double lon1;
     private double lat2;
     private double lon2;
     private double zRMSAccel;
 
-    public Segment(@NonNull LocationData loc1, @NonNull LocationData loc2, double z) {
+    public Segment(int tripID, @NonNull LocationData loc1, @NonNull LocationData loc2, double z) {
+        this.tripID = tripID;
         this.lat1 = loc1.getLatitude();
         this.lon1 = loc1.getLongitude();
         this.lat2 = loc2.getLatitude();

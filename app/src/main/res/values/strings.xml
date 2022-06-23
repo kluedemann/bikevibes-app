@@ -23,6 +23,7 @@
     <string name="prefs_user_key">user_id</string>
     <string name="prefs_trip_key">trip_id</string>
     <string name="prefs_time_key">timestamp</string>
+    <string name="prefs_loc_time_key">loc_time</string>
 
     <!-- Intent Extras Keys -->
     <string name="success_key">success</string>

@@ -83,15 +83,19 @@ public class DataRepository {
     }
 
     /**
-     * Return the maximum timestamp that currently exists in the database.
-     * Takes the maximum of both accelerometer and GPS readings.
+     * Return the maximum accelerometer timestamp that currently exists in the database.
      * @return - the maximum UNIX timestamp in milliseconds
      */
-    long getMaxTime() {
-        // TODO: Split into two methods to account for asynchronous batch inserts
-        long accTime = myDao.getMaxAccelTime();
-        long locTime = myDao.getMaxLocTime();
-        return Math.max(accTime, locTime);
+    long getAccTime() {
+        return myDao.getMaxAccelTime();
+    }
+
+    /**
+     * Return the maximum GPS timestamp that currently exists in the database.
+     * @return - the maximum UNIX timestamp in milliseconds
+     */
+    long getLocTime() {
+        return myDao.getMaxLocTime();
     }
 
     // ************************* LiveData Getter Methods ************************************
@@ -167,7 +171,7 @@ public class DataRepository {
         double centerLon = (maxLon + minLon) / 2;
 
         // Update the values
-        List<Segment> segments = getSegments(locs);
+        List<Segment> segments = getSegments(locs, tripID);
         double zoom = Math.min(zoomLat, zoomLon);
         trip.setMap(segments, centerLat, centerLon, zoom);
     }
@@ -178,14 +182,14 @@ public class DataRepository {
      * @return the list of segments in the trip
      */
     @NonNull
-    private List<Segment> getSegments(@NonNull List<LocationData> locs) {
+    private List<Segment> getSegments(@NonNull List<LocationData> locs, int tripID) {
         ArrayList<Segment> segments = new ArrayList<>();
         LocationData prev = locs.get(0);
         LocationData current;
         for (int i = 1; i < locs.size(); i++) {
             current = locs.get(i);
             double value = Math.sqrt(myDao.getRMSTime(prev.getTimestamp(), current.getTimestamp()));
-            segments.add(new Segment(prev, current, value));
+            segments.add(new Segment(tripID, prev, current, value));
             prev = current;
         }
         return segments;

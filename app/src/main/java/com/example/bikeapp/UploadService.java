@@ -41,7 +41,8 @@ public class UploadService extends Service {
     private boolean isUploading = false;
     private ExecutorService uploadExecutor;
     private String userID;
-    private long minTime;
+    private long accTime;
+    private long locTime;
 
     /**
      * Required override method. This service cannot be bound to
@@ -104,11 +105,13 @@ public class UploadService extends Service {
     private void getPrefs() {
         final String PREFS = getString(R.string.preference_file_key);
         final String USER_KEY = getString(R.string.prefs_user_key);
-        final String MIN_TIME_KEY = getString(R.string.prefs_time_key);
+        final String ACC_TIME_KEY = getString(R.string.prefs_time_key);
+        final String LOC_TIME_KEY = getString(R.string.prefs_loc_time_key);
 
         SharedPreferences sharedPref = getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         userID = sharedPref.getString(USER_KEY, null);
-        minTime = sharedPref.getLong(MIN_TIME_KEY, 0);
+        accTime = sharedPref.getLong(ACC_TIME_KEY, 0);
+        locTime = sharedPref.getLong(LOC_TIME_KEY, accTime);
 
         // Initialize user/trip ids on first opening of app
         if (userID == null) {
@@ -125,10 +128,11 @@ public class UploadService extends Service {
     private void uploadData() {
         // Query data
 
-        //Log.d(TAG, String.format("%d", minTime));
-        List<LocationData> locations = repository.getLocList(minTime);
-        List<AccelerometerData> accel_readings = repository.getAccelList(minTime);
-        minTime = repository.getMaxTime();
+        //Log.d(TAG, String.format("%d", accTime));
+        List<LocationData> locations = repository.getLocList(locTime);
+        locTime = repository.getLocTime();
+        List<AccelerometerData> accel_readings = repository.getAccelList(accTime);
+        accTime = repository.getAccTime();
 
         // Initialize counters
         numToUpload = locations.size() + accel_readings.size();
@@ -260,11 +264,13 @@ public class UploadService extends Service {
      */
     private void writePrefs() {
         final String PREFS = getString(R.string.preference_file_key);
-        final String MIN_TIME_KEY = getString(R.string.prefs_time_key);
+        final String ACC_TIME_KEY = getString(R.string.prefs_time_key);
+        final String LOC_TIME_KEY = getString(R.string.prefs_loc_time_key);
 
         SharedPreferences sharedPref = getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putLong(MIN_TIME_KEY, minTime);
+        editor.putLong(ACC_TIME_KEY, accTime);
+        editor.putLong(LOC_TIME_KEY, locTime);
         editor.apply();
     }
 
