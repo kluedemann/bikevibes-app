@@ -97,7 +97,7 @@ public class MainActivity extends AppCompatActivity {
         Context ctx = getApplicationContext();
         Configuration.getInstance().load(ctx, PreferenceManager.getDefaultSharedPreferences(ctx));
         setContentView(R.layout.activity_main);
-        Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
+        Toolbar myToolbar = findViewById(R.id.my_toolbar);
         setSupportActionBar(myToolbar);
 
         Log.d(TAG, "Created!");
@@ -111,7 +111,7 @@ public class MainActivity extends AppCompatActivity {
         dataViews[5] = findViewById(R.id.speedTextView);
 
         Configuration.getInstance().setUserAgentValue(BuildConfig.APPLICATION_ID);
-        map = (MapView) findViewById(R.id.mapView);
+        map = findViewById(R.id.mapView);
         map.setTileSource(new ThunderforestTileSource(ctx, ThunderforestTileSource.NEIGHBOURHOOD));
         map.setMultiTouchControls(true);
         map.setTilesScaledToDpi(true);
@@ -274,10 +274,11 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * Update the center position of the map
-     * @param center - the GeoPoint that the map should be centered to
+     * @param lat - the latitude that the map should be centered to
+     * @param lon - the longitude that the map should be centered to
      */
-    private void setMapCenter(GeoPoint center) {
-        map.getController().setCenter(center);
+    private void setMapCenter(double lat, double lon) {
+        map.getController().setCenter(new GeoPoint(lat, lon));
     }
 
     /**
@@ -347,14 +348,24 @@ public class MainActivity extends AppCompatActivity {
      */
     private void updateTrip(TripSummary trip) {
         if (trip != null) {
+            BikeApp app = (BikeApp) getApplication();
+
+            // Generate polylines and update the map
+            app.getExecutors().execute(() -> {
+                List<Polyline> lines = viewModel.getLines(trip.getSegments());
+                map.post(() -> {
+                    setMapLines(lines);
+                    setMapZoom(trip.getZoom());
+                    setMapCenter(trip.getCenterLat(), trip.getCenterLon());
+                });
+            });
+
+            // Update the text fields
             setStartText(trip.getStart());
             setEndText(trip.getEnd());
             setDistText(trip.getDist());
             setSpeedText(trip.getSpeed());
             setBumpText(trip.getBumpiness());
-            setMapLines(trip.getLines());
-            setMapZoom(trip.getZoom());
-            setMapCenter(trip.getCenter());
         }
     }
 }

@@ -2,9 +2,6 @@ package com.example.bikeapp.db;
 
 import androidx.annotation.NonNull;
 
-import org.osmdroid.util.GeoPoint;
-import org.osmdroid.views.overlay.Polyline;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -17,8 +14,9 @@ public class TripSummary {
     private double speed;
     private double bumpiness;
     private double zoom;
-    private GeoPoint center;
-    private List<Polyline> lines;
+    private List<Segment> segments;
+    private double centerLat;
+    private double centerLon;
 
     public TripSummary(int tripID, List<LocationData> locs, long start, long end, double bumpiness) {
         this.tripID = tripID;
@@ -28,8 +26,9 @@ public class TripSummary {
         this.speed = getAvgSpeed(start, end);
         this.bumpiness = bumpiness;
         this.zoom = 10;
-        this.center = new GeoPoint(53.5351, -113.4938);
-        this.lines = new ArrayList<>();
+        this.centerLat = 53.5351;
+        this.centerLon = -113.4938;
+        this.segments = new ArrayList<>();
     }
 
     /**
@@ -89,13 +88,15 @@ public class TripSummary {
 
     /**
      * Update the trip's map elements.
-     * @param lines - the polylines to be added to the map
-     * @param center - the location of the center of the map
+     * @param segments - the segments of the given trip
+     * @param centerLat - the latitude of the center of the map
+     * @param centerLon - the longitude of the center of the map
      * @param zoom - the zoom level of the map
      */
-    public void setMap(List<Polyline> lines, GeoPoint center, double zoom) {
-        this.lines = lines;
-        this.center = center;
+    public void setMap(List<Segment> segments, double centerLat, double centerLon, double zoom) {
+        this.segments = segments;
+        this.centerLat = centerLat;
+        this.centerLon = centerLon;
         this.zoom = zoom;
     }
 
@@ -128,11 +129,15 @@ public class TripSummary {
         return zoom;
     }
 
-    public GeoPoint getCenter() {
-        return center;
+    public List<Segment> getSegments() {
+        return segments;
     }
 
-    public List<Polyline> getLines() {
-        return lines;
+    public double getCenterLat() {
+        return centerLat;
+    }
+
+    public double getCenterLon() {
+        return centerLon;
     }
 }

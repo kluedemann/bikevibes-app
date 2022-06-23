@@ -3,11 +3,19 @@ package com.example.bikeapp;
 import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 
+import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 
+import com.example.bikeapp.db.Segment;
 import com.example.bikeapp.db.TripSummary;
+
+import org.osmdroid.views.overlay.Polyline;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Contains the business logic for the UI.
@@ -108,5 +116,55 @@ public class TrackingViewModel extends AndroidViewModel {
      */
     public void updateMinTrip() {
         mRepository.updateMinTrip();
+    }
+
+    /**
+     * Produce a list of Polylines from Segments of the trip.
+     * @param segments - the segments of the given trip
+     * @return - the polylines to draw to the map
+     */
+    public List<Polyline> getLines(@NonNull List<Segment> segments) {
+        // Get the maximum RMS z acceleration over a segment
+        double max = 0;
+        for (int i = 0; i < segments.size(); i++) {
+            double value = segments.get(i).getzRMSAccel();
+            if (value > max) {
+                max = value;
+            }
+        }
+
+        // Convert the segments into Polylines
+        List<Polyline> lines = new ArrayList<>();
+        for (int i = 0; i < segments.size(); i++) {
+            Segment segment = segments.get(i);
+            Polyline line = segment.toPolyline();
+            line.setWidth(10f);
+            line.setColor(getColor(segment.getzRMSAccel(), max));
+            lines.add(line);
+        }
+        return lines;
+    }
+
+    /**
+     * Return the integer color value that a segment should be colored.
+     * Uses a linear gradient with green as 0 and red as the maximum value.
+     * @param value - the value used to determine the color
+     * @param max - the maximum value for the gradient
+     * @return - the integer color value
+     */
+    private int getColor(double value, double max) {
+        double avg = Math.min(value, max);
+        int color = (int)(avg * 510 / max);
+        int red = 255;
+        int green = 255;
+        if (color > 255) {
+            green = 510 - color;
+        } else {
+            red = color;
+        }
+
+        String colorString = String.format("#%02X%02X00", red, green);
+        //Log.d("Color", colorString);
+        return Color.parseColor(colorString);
     }
 }

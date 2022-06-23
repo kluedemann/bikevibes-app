@@ -1,7 +1,5 @@
 package com.example.bikeapp;
 
-import android.graphics.Color;
-
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
@@ -9,11 +7,9 @@ import androidx.lifecycle.MutableLiveData;
 import com.example.bikeapp.db.AccelerometerData;
 import com.example.bikeapp.db.AppDatabase;
 import com.example.bikeapp.db.LocationData;
+import com.example.bikeapp.db.Segment;
 import com.example.bikeapp.db.TrackingDao;
 import com.example.bikeapp.db.TripSummary;
-
-import org.osmdroid.util.GeoPoint;
-import org.osmdroid.views.overlay.Polyline;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -126,70 +122,6 @@ public class DataRepository {
         });
     }
 
-
-
-
-    /**
-     * Get the lines to draw to the map from the list of location instances
-     * @param locs - the list of LocationData instances
-     * @return the list of polylines to draw to the map
-     */
-    @NonNull
-    private List<Polyline> getLines(@NonNull List<LocationData> locs) {
-        // Calculate center position
-        ArrayList<GeoPoint> points = new ArrayList<>();
-        for (int i = 0; i < locs.size(); i++) {
-            LocationData loc = locs.get(i);
-            //Log.d("Point", String.format("%d, %f, %f", loc.getTimestamp(), loc.getLatitude(), loc.getLongitude()));
-            points.add(loc.getGeoPoint());
-
-        }
-
-        double max = 0;
-        double[] accels = new double[locs.size() - 1];
-        for (int i = 0; i < locs.size() - 1; i++) {
-            double value = Math.sqrt(myDao.getRMSTime(locs.get(i).getTimestamp(), locs.get(i+1).getTimestamp()));
-            //Log.d("Values", String.valueOf(value));
-            accels[i] = value;
-            if (value > max) {
-                max = value;
-            }
-        }
-
-        ArrayList<Polyline> temp = new ArrayList<>();
-        for (int i = 0; i < locs.size() - 1; i++) {
-            Polyline line = new Polyline();
-            line.setPoints(points.subList(i, i + 2));
-            line.setColor(getColor(accels[i], max));
-            line.setWidth(10f);
-            temp.add(line);
-        }
-        return temp;
-    }
-
-    /**
-     * Return the integer color value that a segment should be colored.
-     * Uses a linear gradient with green as 0 and red as the maximum value.
-     * @param value - the value used to determine the color
-     * @param max - the maximum value for the gradient
-     * @return - the integer color value
-     */
-    private int getColor(double value, double max) {
-        double avg = Math.min(value, max);
-        int color = (int)(avg * 510 / max);
-        int red = 255;
-        int green = 255;
-        if (color > 255) {
-            green = 510 - color;
-        } else {
-            red = color;
-        }
-
-        String colorString = String.format("#%02X%02X00", red, green);
-        //Log.d("Color", colorString);
-        return Color.parseColor(colorString);
-    }
-
     /**
      * Update the minimum tripID from the database.
      */
@@ -201,13 +133,12 @@ public class DataRepository {
      * Update the center of the map, zoom level, and lines to draw from
      * the list of location instances recorded during a given trip.
      *
-     * Center is set as the midpoint between the maximum and minimum lat/long coordinates.
+     * CenterLat/Lon are set as the midpoint between the maximum and minimum lat/long coordinates.
      * Zoom level is determined by calculating the minimum tile size that will fit the
      * entire trip into a single tile. Then we add 0.5 zoom levels because multiple tiles fit into
      * the map window.
-     * Lines are taken from pairs of LocationData instances. The color is a linear gradient of
-     * the RMS of vertical acceleration from readings taken between the two GPS recordings.
-     * The gradient goes from green at 0 to red being the maximum RMS value.
+     * Segments are taken from pairs of LocationData instances. They also store the RMS of x
+     * acceleration over that portion of the trip.
      *
      * @param trip - the TripSummary to be updated
      * @param locs - the list of location instances from the trip
@@ -236,9 +167,27 @@ public class DataRepository {
         double centerLon = (maxLon + minLon) / 2;
 
         // Update the values
-        List<Polyline> lines = getLines(locs);
+        List<Segment> segments = getSegments(locs);
         double zoom = Math.min(zoomLat, zoomLon);
-        GeoPoint center = new GeoPoint(centerLat, centerLon);
-        trip.setMap(lines, center, zoom);
+        trip.setMap(segments, centerLat, centerLon, zoom);
+    }
+
+    /**
+     * Get the segments of the trip from the list of location instances
+     * @param locs - the list of LocationData instances
+     * @return the list of segments in the trip
+     */
+    @NonNull
+    private List<Segment> getSegments(@NonNull List<LocationData> locs) {
+        ArrayList<Segment> segments = new ArrayList<>();
+        LocationData prev = locs.get(0);
+        LocationData current;
+        for (int i = 1; i < locs.size(); i++) {
+            current = locs.get(i);
+            double value = Math.sqrt(myDao.getRMSTime(prev.getTimestamp(), current.getTimestamp()));
+            segments.add(new Segment(prev, current, value));
+            prev = current;
+        }
+        return segments;
     }
 }
