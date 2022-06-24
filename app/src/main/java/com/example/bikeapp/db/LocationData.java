@@ -6,6 +6,7 @@ import androidx.room.PrimaryKey;
 
 import org.osmdroid.util.GeoPoint;
 
+import java.util.Date;
 import java.util.Locale;
 
 /**
@@ -17,12 +18,13 @@ public class LocationData extends DataInstance {
     private static final String URL_TEMPLATE = "http://162.246.157.171:8080/upload/location?user_id=%s&time_stamp=%d&trip_id=%d&latitude=%f&longitude=%f";
 
     @PrimaryKey
-    private long timestamp;
+    @NonNull
+    private Date timestamp;
     private double latitude;
     private double longitude;
     private int tripID;
 
-    public LocationData(long timestamp, double latitude, double longitude, int tripID) {
+    public LocationData(@NonNull Date timestamp, double latitude, double longitude, int tripID) {
         this.timestamp = timestamp;
         this.latitude = latitude;
         this.longitude = longitude;
@@ -36,7 +38,7 @@ public class LocationData extends DataInstance {
      */
     @Override
     public String getURL(String user_id) {
-        return String.format(Locale.US, URL_TEMPLATE, user_id, timestamp, tripID, latitude, longitude);
+        return String.format(Locale.US, URL_TEMPLATE, user_id, timestamp.getTime(), tripID, latitude, longitude);
     }
 
     /**
@@ -57,7 +59,11 @@ public class LocationData extends DataInstance {
         myDao.insertLocation(this);
     }
 
-    public long getTimestamp() {
+    public long getTime() {
+        return timestamp.getTime();
+    }
+
+    public Date getTimestamp() {
         return timestamp;
     }
 
@@ -73,7 +79,7 @@ public class LocationData extends DataInstance {
         return tripID;
     }
 
-    public void setTimestamp(long timestamp) {
+    public void setTimestamp(Date timestamp) {
         this.timestamp = timestamp;
     }
 

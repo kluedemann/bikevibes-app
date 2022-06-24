@@ -4,29 +4,26 @@
     <PreferenceCategory app:title="Privacy">
 
         <Preference
-            app:title="Data Policy"
             app:summary="We keep no identifying information on our server other than your anonymous user ID. You may request that your data be deleted from the server at any time."
-            />
+            app:title="Data Policy" />
 
         <SeekBarPreference
-            app:key="privacy_radius"
-            app:title="Blackout Radius"
-            app:summary="Distance in meters around the start and end of a trip in which data is not tracked"
-            app:showSeekBarValue="true"
             android:max="500"
             app:defaultValue="50"
+            app:key="privacy_radius"
             app:seekBarIncrement="10"
-            />
+            app:showSeekBarValue="true"
+            app:summary="Distance in meters around the start and end of a trip in which data is not tracked"
+            app:title="Blackout Radius" />
 
         <Preference
             app:key="user_id"
-            app:title="User ID"
             app:summary="your user id"
-            />
+            app:title="User ID" />
 
         <Preference
-            app:title="Delete My Data"
-            app:summary="Please email us with your user id so we can delete it for you"/>
+            app:summary="Please email us with your user id so we can delete it for you"
+            app:title="Delete My Data" />
 
 
 
@@ -35,7 +32,7 @@
     <PreferenceCategory app:title="Storage">
         <Preference
             app:key="delete_local"
-            app:title="Delete Local Data"/>
+            app:title="Delete Local Data" />
 
 
     </PreferenceCategory>
@@ -44,20 +41,20 @@
 
         <Preference
             app:key="email"
-            app:title="Email Us"
-            app:summary="kluedema@ualberta.ca"/>
+            app:summary="kluedema@ualberta.ca"
+            app:title="Email Us" />
     </PreferenceCategory>
 
     <PreferenceCategory app:title="Acknowledgements">
         <Preference
-            app:title="Cybera Rapid Access Cloud"
-            app:summary="Provided server hosting"/>
+            app:summary="Provided server hosting"
+            app:title="Cybera Rapid Access Cloud" />
         <Preference
-            app:title="Thunderforest"
-            app:summary="Map tile provider"/>
+            app:summary="Map tile provider"
+            app:title="Thunderforest" />
         <Preference
-            app:title="Natural Sciences and Engineering Research Council of Canada"
-            app:summary="Provided research funding"/>
+            app:summary="Provided research funding"
+            app:title="Natural Sciences and Engineering Research Council of Canada" />
     </PreferenceCategory>
 
 

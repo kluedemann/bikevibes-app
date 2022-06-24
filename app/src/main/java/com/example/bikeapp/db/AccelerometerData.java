@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
+import java.util.Date;
 import java.util.Locale;
 
 /**
@@ -15,13 +16,14 @@ public class AccelerometerData extends DataInstance {
     private static final String URL_TEMPLATE = "http://162.246.157.171:8080/upload/accelerometer?user_id=%s&time_stamp=%d&trip_id=%d&x_accel=%f&y_accel=%f&z_accel=%f";
 
     @PrimaryKey
-    private long timestamp;
+    @NonNull
+    private Date timestamp;
     private float x;
     private float y;
     private float z;
     private int tripID;
 
-    public AccelerometerData(long timestamp, float x, float y, float z, int tripID) {
+    public AccelerometerData(@NonNull Date timestamp, float x, float y, float z, int tripID) {
         this.timestamp = timestamp;
         this.x = x;
         this.y = y;
@@ -29,7 +31,7 @@ public class AccelerometerData extends DataInstance {
         this.tripID = tripID;
     }
 
-    public AccelerometerData(long timestamp, @NonNull float[] values, int tripID) {
+    public AccelerometerData(@NonNull Date timestamp, @NonNull float[] values, int tripID) {
         this.timestamp = timestamp;
         this.x = values[0];
         this.y = values[1];
@@ -44,7 +46,7 @@ public class AccelerometerData extends DataInstance {
      */
     @Override
     public String getURL(String user_id) {
-        return String.format(Locale.US, URL_TEMPLATE, user_id, timestamp, tripID, x, y, z);
+        return String.format(Locale.US, URL_TEMPLATE, user_id, timestamp.getTime(), tripID, x, y, z);
     }
 
     /**
@@ -65,8 +67,9 @@ public class AccelerometerData extends DataInstance {
         myDao.insertAccel(this);
     }
 
-    public long getTimestamp() {
-        return timestamp;
+    public Date getTimestamp() {return timestamp;}
+    public long getTime() {
+        return timestamp.getTime();
     }
 
     public float getX() {
@@ -85,7 +88,7 @@ public class AccelerometerData extends DataInstance {
         return tripID;
     }
 
-    public void setTimestamp(long timestamp) {
+    public void setTimestamp(Date timestamp) {
         this.timestamp = timestamp;
     }
 

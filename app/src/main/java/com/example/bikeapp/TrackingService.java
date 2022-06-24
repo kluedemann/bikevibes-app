@@ -196,7 +196,7 @@ public class TrackingService extends Service implements SensorEventListener, Loc
             linear_acceleration[1] = event.values[1] - gravity[1];
             linear_acceleration[2] = event.values[2] - gravity[2];
         }
-        AccelerometerData acc = new AccelerometerData(date.getTime(), linear_acceleration, tripID);
+        AccelerometerData acc = new AccelerometerData(date, linear_acceleration, tripID);
         if (isTracking) {
             accelCache.add(acc);
             if (accelCache.size() == 150) {
@@ -227,7 +227,7 @@ public class TrackingService extends Service implements SensorEventListener, Loc
     @Override
     public void onLocationChanged(@NonNull Location loc) {
         Date date = new Date();
-        LocationData locData = new LocationData(date.getTime(), loc.getLatitude(), loc.getLongitude(), tripID);
+        LocationData locData = new LocationData(date, loc.getLatitude(), loc.getLongitude(), tripID);
         //repository.setLoc(locData);
         if (isTracking) {
             //repository.insert(locData);

@@ -14,14 +14,15 @@ public class TripSummary {
     private double speed;
     private double bumpiness;
     private double zoom;
-    private List<Segment> segments;
     private double centerLat;
     private double centerLon;
 
-    public TripSummary(int tripID, List<LocationData> locs, long start, long end, double bumpiness) {
+    private List<Segment> segments;
+
+    public TripSummary(int tripID, List<LocationData> locs, Date start, Date end, double bumpiness) {
         this.tripID = tripID;
-        this.start = new Date(start);
-        this.end = new Date(end);
+        this.start = start;
+        this.end = end;
         this.dist = getDist(locs);
         this.speed = getAvgSpeed(start, end);
         this.bumpiness = bumpiness;
@@ -37,8 +38,8 @@ public class TripSummary {
      * @param end - the UNIX end time in milliseconds
      * @return the average speed in km/h (or zero if the duration is 0 ms)
      */
-    private double getAvgSpeed(long start, long end) {
-        double hours = (end - start) / (1000 * 60 * 60f);
+    private double getAvgSpeed(@NonNull Date start, @NonNull Date end) {
+        double hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60f);
         if (hours != 0) {
             return dist / hours;
         }

@@ -21,6 +21,7 @@ import com.example.bikeapp.db.AccelerometerData;
 import com.example.bikeapp.db.DataInstance;
 import com.example.bikeapp.db.LocationData;
 
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -41,8 +42,8 @@ public class UploadService extends Service {
     private boolean isUploading = false;
     private ExecutorService uploadExecutor;
     private String userID;
-    private long accTime;
-    private long locTime;
+    private Date accTime;
+    private Date locTime;
 
     /**
      * Required override method. This service cannot be bound to
@@ -110,8 +111,8 @@ public class UploadService extends Service {
 
         SharedPreferences sharedPref = getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         userID = sharedPref.getString(USER_KEY, null);
-        accTime = sharedPref.getLong(ACC_TIME_KEY, 0);
-        locTime = sharedPref.getLong(LOC_TIME_KEY, accTime);
+        accTime = new Date(sharedPref.getLong(ACC_TIME_KEY, 0));
+        locTime = new Date(sharedPref.getLong(LOC_TIME_KEY, accTime.getTime()));
 
         // Initialize user/trip ids on first opening of app
         if (userID == null) {
@@ -269,8 +270,12 @@ public class UploadService extends Service {
 
         SharedPreferences sharedPref = getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putLong(ACC_TIME_KEY, accTime);
-        editor.putLong(LOC_TIME_KEY, locTime);
+        if (accTime != null) {
+            editor.putLong(ACC_TIME_KEY, accTime.getTime());
+        }
+        if (locTime != null) {
+            editor.putLong(LOC_TIME_KEY, locTime.getTime());
+        }
         editor.apply();
     }
 

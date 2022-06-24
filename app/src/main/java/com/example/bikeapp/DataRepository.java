@@ -12,6 +12,7 @@ import com.example.bikeapp.db.TrackingDao;
 import com.example.bikeapp.db.TripSummary;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -68,7 +69,7 @@ public class DataRepository {
      * @param minTime - the minimum UNIX timestamp in milliseconds
      * @return - a list of AccelerometerData readings
      */
-    List<AccelerometerData> getAccelList(long minTime) {
+    List<AccelerometerData> getAccelList(Date minTime) {
         return myDao.getAccel(minTime);
     }
 
@@ -78,7 +79,7 @@ public class DataRepository {
      * @param minTime - the minimum UNIX timestamp in milliseconds
      * @return - a list of LocationData instances
      */
-    List<LocationData> getLocList(long minTime) {
+    List<LocationData> getLocList(Date minTime) {
         return myDao.getLocation(minTime);
     }
 
@@ -86,7 +87,7 @@ public class DataRepository {
      * Return the maximum accelerometer timestamp that currently exists in the database.
      * @return - the maximum UNIX timestamp in milliseconds
      */
-    long getAccTime() {
+    Date getAccTime() {
         return myDao.getMaxAccelTime();
     }
 
@@ -94,7 +95,7 @@ public class DataRepository {
      * Return the maximum GPS timestamp that currently exists in the database.
      * @return - the maximum UNIX timestamp in milliseconds
      */
-    long getLocTime() {
+    Date getLocTime() {
         return myDao.getMaxLocTime();
     }
 
@@ -114,8 +115,8 @@ public class DataRepository {
      */
     void update(int tripID) {
         AppDatabase.getExecutor().execute(() -> {
-            long start = myDao.getTripStart(tripID);
-            long end = myDao.getTripEnd(tripID);
+            Date start = myDao.getTripStart(tripID);
+            Date end = myDao.getTripEnd(tripID);
             List<LocationData> locs = myDao.getTripLocs(tripID);
             double bumpiness = Math.sqrt(myDao.getMSAccel(tripID));
             TripSummary temp = new TripSummary(tripID, locs, start, end, bumpiness);

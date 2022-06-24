@@ -28,7 +28,7 @@ public class SettingsActivity extends AppCompatActivity {
                     .replace(R.id.settings, new SettingsFragment())
                     .commit();
         }
-        Toolbar myToolbar = findViewById(R.id.my_toolbar);
+        Toolbar myToolbar = findViewById(R.id.settings_toolbar);
         setSupportActionBar(myToolbar);
 
         ActionBar actionBar = getSupportActionBar();

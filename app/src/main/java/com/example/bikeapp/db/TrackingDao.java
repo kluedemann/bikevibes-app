@@ -6,6 +6,7 @@ import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -22,10 +23,10 @@ public interface TrackingDao {
     void insertAccel(AccelerometerData acc);
 
     @Query("SELECT * FROM LocationData WHERE timestamp > :minTimestamp")
-    List<LocationData> getLocation(long minTimestamp);
+    List<LocationData> getLocation(Date minTimestamp);
 
     @Query("SELECT * FROM AccelerometerData WHERE timestamp > :minTimestamp")
-    List<AccelerometerData> getAccel(long minTimestamp);
+    List<AccelerometerData> getAccel(Date minTimestamp);
 
     @Delete
     void deleteLocation(LocationData loc);
@@ -40,16 +41,16 @@ public interface TrackingDao {
     void insertLocBatch(List<LocationData> locList);
 
     @Query("SELECT MAX(timestamp) FROM AccelerometerData")
-    long getMaxAccelTime();
+    Date getMaxAccelTime();
 
     @Query("SELECT MAX(timestamp) FROM LocationData")
-    long getMaxLocTime();
+    Date getMaxLocTime();
 
     @Query("SELECT MIN(timestamp) FROM AccelerometerData WHERE tripID=:tripID")
-    long getTripStart(int tripID);
+    Date getTripStart(int tripID);
 
     @Query("SELECT MAX(timestamp) FROM AccelerometerData WHERE tripID=:tripID")
-    long getTripEnd(int tripID);
+    Date getTripEnd(int tripID);
 
     @Query("SELECT * FROM LocationData WHERE tripID=:tripID ORDER BY timestamp ASC")
     List<LocationData> getTripLocs(int tripID);
@@ -70,7 +71,7 @@ public interface TrackingDao {
     double getMinLon(int tripID);
 
     @Query("SELECT AVG(z * z) FROM AccelerometerData WHERE timestamp >= :start AND timestamp <= :end")
-    double getRMSTime(long start, long end);
+    double getRMSTime(Date start, Date end);
 
     @Query("SELECT MIN(tripID) FROM AccelerometerData")
     int getMinTrip();
