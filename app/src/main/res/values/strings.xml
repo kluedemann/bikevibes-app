@@ -53,18 +53,21 @@
     <string name="settings_title">Settings</string>
     <string name="title_activity_settings">SettingsActivity</string>
 
-    <!-- Preference Titles -->
-    <string name="messages_header">Messages</string>
-    <string name="sync_header">Sync</string>
+    <!-- Preferences -->
+    <string name="email_address">kluedema@ualberta.ca</string>
 
-    <!-- Messages Preferences -->
-    <string name="signature_title">Your signature</string>
-    <string name="reply_title">Default reply action</string>
+    <string name="cybera_key">cybera_pref</string>
+    <string name="cybera_url">https://www.cybera.ca</string>
+    <string name="cybera_title">Cybera Rapid Access Cloud</string>
+    <string name="cybera_text">Provided server hosting</string>
 
-    <!-- Sync Preferences -->
-    <string name="sync_title">Sync email periodically</string>
-    <string name="attachment_title">Download incoming attachments</string>
-    <string name="attachment_summary_on">Automatically download attachments for incoming emails
-    </string>
-    <string name="attachment_summary_off">Only download attachments when manually requested</string>
+    <string name="nserc_key">nserc_pref</string>
+    <string name="nserc_url">https://www.nserc-crsng.gc.ca/index_eng.asp</string>
+    <string name="nserc_title">Natural Sciences and Engineering Research Council of Canada</string>
+    <string name="nserc_text">Provided research funding</string>
+
+    <string name="tforest_key">thunderforest_pref</string>
+    <string name="tforest_url">https://www.thunderforest.com/</string>
+    <string name="tforest_title">Thunderforest</string>
+    <string name="tforest_text">Map tile provider</string>
 </resources>

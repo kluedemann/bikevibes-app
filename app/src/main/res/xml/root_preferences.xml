@@ -41,20 +41,23 @@
 
         <Preference
             app:key="email"
-            app:summary="kluedema@ualberta.ca"
+            app:summary="@string/email_address"
             app:title="Email Us" />
     </PreferenceCategory>
 
     <PreferenceCategory app:title="Acknowledgements">
         <Preference
-            app:summary="Provided server hosting"
-            app:title="Cybera Rapid Access Cloud" />
+            app:key="@string/cybera_key"
+            app:summary="@string/cybera_text"
+            app:title="@string/cybera_title" />
         <Preference
-            app:summary="Map tile provider"
-            app:title="Thunderforest" />
+            app:key="@string/tforest_key"
+            app:summary="@string/tforest_text"
+            app:title="@string/tforest_title" />
         <Preference
-            app:summary="Provided research funding"
-            app:title="Natural Sciences and Engineering Research Council of Canada" />
+            app:key="@string/nserc_key"
+            app:summary="@string/nserc_text"
+            app:title="@string/nserc_title" />
     </PreferenceCategory>
 
 

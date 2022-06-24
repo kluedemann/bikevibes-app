@@ -1,12 +1,13 @@
 package com.example.bikeapp;
 
-import android.app.Application;
+import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.Toast;
 
 import androidx.appcompat.app.ActionBar;
@@ -67,10 +68,13 @@ public class SettingsActivity extends AppCompatActivity {
                 Preference emailPref = findPreference("email");
                 if (emailPref != null) {
                     emailPref.setOnPreferenceClickListener(preference -> {
-                        ClipboardManager clipboard = (ClipboardManager) app.getSystemService(Context.CLIPBOARD_SERVICE);
-                        ClipData clip = ClipData.newPlainText("Email", "kluedema@ualberta.ca");
-                        clipboard.setPrimaryClip(clip);
-                        Toast.makeText(app, "Copied to Clipboard", Toast.LENGTH_SHORT).show();
+                        Intent i = new Intent(Intent.ACTION_SENDTO);
+                        i.setData(Uri.parse("mailto:" + getString(R.string.email_address)));
+                        try {
+                            startActivity(i);
+                        } catch (ActivityNotFoundException ex) {
+                            Toast.makeText(app, "No email client found.", Toast.LENGTH_SHORT).show();
+                        }
                         return true;
                     });
                 }
@@ -90,7 +94,36 @@ public class SettingsActivity extends AppCompatActivity {
                         return true;
                     });
                 }
+
+                Preference cyberaPref = findPreference(getString(R.string.cybera_key));
+                if (cyberaPref != null) {
+                    cyberaPref.setOnPreferenceClickListener(preference -> {
+                        openURL(getString(R.string.cybera_url));
+                        return true;
+                    });
+                }
+
+                Preference tforestPref = findPreference(getString(R.string.tforest_key));
+                if (tforestPref != null) {
+                    tforestPref.setOnPreferenceClickListener(preference -> {
+                        openURL(getString(R.string.tforest_url));
+                        return true;
+                    });
+                }
+
+                Preference nsercPref = findPreference(getString(R.string.nserc_key));
+                if (nsercPref != null) {
+                    nsercPref.setOnPreferenceClickListener(preference -> {
+                        openURL(getString(R.string.nserc_url));
+                        return true;
+                    });
+                }
             }
+        }
+
+        public void openURL(String url) {
+            Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+            startActivity(browserIntent);
         }
     }
 }
