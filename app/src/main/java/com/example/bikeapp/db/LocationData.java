@@ -98,4 +98,9 @@ public class LocationData extends DataInstance {
     public GeoPoint getGeoPoint() {
         return new GeoPoint(latitude, longitude);
     }
+
+    @NonNull
+    public String toString() {
+        return String.format(Locale.getDefault(),"%d, %f, %f, %d", timestamp.getTime(), latitude, longitude, tripID);
+    }
 }

@@ -118,10 +118,11 @@ public class MainActivity extends AppCompatActivity {
 
         // Setup ViewModel and live data
         viewModel = new ViewModelProvider(this).get(TrackingViewModel.class);
-        viewModel.getMinTrip().observe(this, viewModel::setMinTrip);
         viewModel.getTripSummary().observe(this, this::updateTrip);
-        viewModel.update();
-        viewModel.updateMinTrip();
+        viewModel.getTrips().observe(this, viewModel::setTrips);
+
+
+        //viewModel.updateMinTrip();
 
         // Request location permissions
         String[] permissions = {Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.WRITE_EXTERNAL_STORAGE};
@@ -136,7 +137,6 @@ public class MainActivity extends AppCompatActivity {
                 getApplicationContext().startService(intent);
             } else if (!isActive && trackingService.getTracking()) {
                 trackingService.disableTracking();
-                viewModel.incrementMax();
             }
         });
 
@@ -159,6 +159,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
 
+
+
         if (!isBound) {
             // Bind TrackingService
             Intent intent = new Intent(getApplicationContext(), TrackingService.class);
@@ -170,6 +172,7 @@ public class MainActivity extends AppCompatActivity {
         uploadButton.setEnabled(true);
 
         map.onResume();
+        viewModel.update();
     }
 
     /**

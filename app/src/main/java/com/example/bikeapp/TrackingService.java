@@ -23,6 +23,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
+import androidx.preference.PreferenceManager;
 
 import com.example.bikeapp.db.AccelerometerData;
 import com.example.bikeapp.db.LocationData;
@@ -120,7 +121,7 @@ public class TrackingService extends Service implements SensorEventListener, Loc
         tripID++;
         isTracking = true;
         startListening();
-        writePrefs();
+        //writePrefs();
         wakeLock.acquire(10*60*60*1000L); /*10 Hour Timeout*/
 
         return START_NOT_STICKY;
@@ -228,9 +229,9 @@ public class TrackingService extends Service implements SensorEventListener, Loc
     public void onLocationChanged(@NonNull Location loc) {
         Date date = new Date();
         LocationData locData = new LocationData(date, loc.getLatitude(), loc.getLongitude(), tripID);
-        //repository.setLoc(locData);
         if (isTracking) {
             //repository.insert(locData);
+            Log.d(TAG, locData.toString());
             locCache.add(locData);
             if (locCache.size() == 6) {
                 numInserted += 6;
@@ -271,6 +272,11 @@ public class TrackingService extends Service implements SensorEventListener, Loc
 
         sensorManager.unregisterListener(this);
         locationManager.removeUpdates(this);
+
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        int blackoutRadius = prefs.getInt("privacy_radius", 50);
+        repository.createSegments(tripID, blackoutRadius);
+        writePrefs();
 
         if (wakeLock.isHeld()) {
             wakeLock.release();

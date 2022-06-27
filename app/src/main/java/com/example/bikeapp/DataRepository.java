@@ -1,11 +1,14 @@
 package com.example.bikeapp;
 
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.example.bikeapp.db.AccelerometerData;
 import com.example.bikeapp.db.AppDatabase;
+import com.example.bikeapp.db.DataInstance;
 import com.example.bikeapp.db.LocationData;
 import com.example.bikeapp.db.Segment;
 import com.example.bikeapp.db.TrackingDao;
@@ -72,6 +75,9 @@ public class DataRepository {
     List<AccelerometerData> getAccelList(Date minTime) {
         return myDao.getAccel(minTime);
     }
+    List<AccelerometerData> getAccels(int maxTrip) {
+        return myDao.getAccList(maxTrip);
+    }
 
     /**
      * Return all GPS readings that occurred after minTime.
@@ -81,6 +87,9 @@ public class DataRepository {
      */
     List<LocationData> getLocList(Date minTime) {
         return myDao.getLocation(minTime);
+    }
+    List<LocationData> getLocs(int maxTrip) {
+        return myDao.getLocList(maxTrip);
     }
 
     /**
@@ -115,15 +124,15 @@ public class DataRepository {
      */
     void update(int tripID) {
         AppDatabase.getExecutor().execute(() -> {
-            Date start = myDao.getTripStart(tripID);
-            Date end = myDao.getTripEnd(tripID);
-            List<LocationData> locs = myDao.getTripLocs(tripID);
-            double bumpiness = Math.sqrt(myDao.getMSAccel(tripID));
-            TripSummary temp = new TripSummary(tripID, locs, start, end, bumpiness);
-            if (locs.size() > 1) {
-                updateMap(temp, locs, tripID);
+            List<Segment> segs = myDao.getSegments(tripID);
+            if (segs.size() > 0) {
+                Date start = myDao.getTripStartSeg(tripID);
+                Date end = myDao.getTripEndSeg(tripID);
+                double bumpiness = Math.sqrt(myDao.getAvgAccel(tripID));
+                TripSummary temp = new TripSummary(tripID, segs, start, end, bumpiness);
+                updateMap(temp, segs, tripID);
+                trip.postValue(temp);
             }
-            trip.postValue(temp);
         });
     }
 
@@ -133,6 +142,35 @@ public class DataRepository {
     public void updateMinTrip() {
         AppDatabase.getExecutor().execute(() -> minTripID.postValue(myDao.getMinTrip()));
     }
+
+
+//    private void updateMap(@NonNull TripSummary trip, @NonNull List<LocationData> locs, int tripID) {
+//        double maxLat = myDao.getMaxLat(tripID);
+//        double minLat = myDao.getMinLat(tripID);
+//        double maxLon = myDao.getMaxLon(tripID);
+//        double minLon = myDao.getMinLon(tripID);
+//
+//        //Log.d("MAP", String.format("%f, %f, %f, %f", maxLat, minLat, maxLon, minLon));
+//
+//        // Calculate the map's zoom level
+//        // See https://wiki.openstreetmap.org/wiki/Zoom_levels
+//        double latDif = maxLat - minLat;
+//        double lonDif = maxLon - minLon;
+//
+//        // Find the largest tile that the entire trip can fit into and add 1 level
+//        int zoomLat = Math.min((int) ((-Math.log(latDif / 180) / Math.log(2)) + 0.5), 20);
+//        int zoomLon = Math.min((int) ((-Math.log(lonDif / 360) / Math.log(2)) + 0.5), 20);
+//
+//
+//        // Calculate the map's center position
+//        double centerLat = (maxLat + minLat) / 2;
+//        double centerLon = (maxLon + minLon) / 2;
+//
+//        // Update the values
+//        List<Segment> segments = getSegments(locs, tripID);
+//        double zoom = Math.min(zoomLat, zoomLon);
+//        trip.setMap(segments, centerLat, centerLon, zoom);
+//    }
 
     /**
      * Update the center of the map, zoom level, and lines to draw from
@@ -146,14 +184,15 @@ public class DataRepository {
      * acceleration over that portion of the trip.
      *
      * @param trip - the TripSummary to be updated
-     * @param locs - the list of location instances from the trip
+     * @param segs - the list of location instances from the trip
      * @param tripID - the trip that is being considered
      */
-    private void updateMap(@NonNull TripSummary trip, @NonNull List<LocationData> locs, int tripID) {
-        double maxLat = myDao.getMaxLat(tripID);
-        double minLat = myDao.getMinLat(tripID);
-        double maxLon = myDao.getMaxLon(tripID);
-        double minLon = myDao.getMinLon(tripID);
+    private void updateMap(@NonNull TripSummary trip, @NonNull List<Segment> segs, int tripID) {
+        LocationData firstLoc = segs.get(0).getLoc1();
+        double maxLat = Math.max(myDao.getMaxLatSeg(tripID), firstLoc.getLatitude());
+        double minLat = Math.min(myDao.getMinLatSeg(tripID), firstLoc.getLatitude());
+        double maxLon = Math.max(myDao.getMaxLonSeg(tripID), firstLoc.getLongitude());
+        double minLon = Math.min(myDao.getMinLonSeg(tripID), firstLoc.getLongitude());
 
         //Log.d("MAP", String.format("%f, %f, %f, %f", maxLat, minLat, maxLon, minLon));
 
@@ -172,9 +211,8 @@ public class DataRepository {
         double centerLon = (maxLon + minLon) / 2;
 
         // Update the values
-        List<Segment> segments = getSegments(locs, tripID);
         double zoom = Math.min(zoomLat, zoomLon);
-        trip.setMap(segments, centerLat, centerLon, zoom);
+        trip.setMap(segs, centerLat, centerLon, zoom);
     }
 
     /**
@@ -184,13 +222,17 @@ public class DataRepository {
      */
     @NonNull
     private List<Segment> getSegments(@NonNull List<LocationData> locs, int tripID) {
+        if (locs.size() < 2) {
+            return new ArrayList<>();
+        }
         ArrayList<Segment> segments = new ArrayList<>();
         LocationData prev = locs.get(0);
         LocationData current;
         for (int i = 1; i < locs.size(); i++) {
             current = locs.get(i);
-            double value = Math.sqrt(myDao.getRMSTime(prev.getTimestamp(), current.getTimestamp()));
-            segments.add(new Segment(tripID, prev, current, value));
+            double rmsZAccel = Math.sqrt(myDao.getRmsZAccel(prev.getTimestamp(), current.getTimestamp()));
+            double maxZAccel = myDao.getMaxZAccel(prev.getTimestamp(), current.getTimestamp());
+            segments.add(new Segment(tripID, prev, current, rmsZAccel, maxZAccel));
             prev = current;
         }
         return segments;
@@ -200,6 +242,82 @@ public class DataRepository {
         AppDatabase.getExecutor().execute(() -> {
             myDao.deleteAllAccel();
             myDao.deleteAllLoc();
+            myDao.deleteAllSegments();
         });
+    }
+
+    public void createSegments(int tripID, int blackout_radius) {
+        AppDatabase.getExecutor().execute(() -> {
+            List<LocationData> locs = myDao.getTripLocs(tripID);
+            List<Segment> tripSegs = getSegments(locs, tripID);
+            myDao.insertSegments(tripSegs);
+
+            if (blackout_radius > 0) {
+                blackoutData(blackout_radius, tripSegs, tripID);
+            }
+        });
+    }
+
+    private void blackoutData(int radius, @NonNull List<Segment> tripSegs, int tripID) {
+        if (tripSegs.size() < 3) {
+            myDao.delAccGt(tripID, new Date(0));
+            myDao.delLocGt(tripID, new Date(0));
+            return;
+        }
+        LocationData firstLoc = tripSegs.get(0).getLoc1();
+        LocationData current = tripSegs.get(0).getLoc2();
+        int i = 1;
+        while (getPairDist(firstLoc, current) * 1000 < radius && i < tripSegs.size()) {
+            current = tripSegs.get(i).getLoc2();
+            i++;
+        }
+        Date minTS = current.getTimestamp();
+        if (i == tripSegs.size()) {
+            minTS = new Date(minTS.getTime() + 1);
+        }
+        myDao.delAccLt(tripID, minTS);
+        myDao.delLocLt(tripID, minTS);
+
+        LocationData lastLoc = tripSegs.get(tripSegs.size() - 1).getLoc2();
+        current = tripSegs.get(tripSegs.size() - 1).getLoc1();
+        i = tripSegs.size() - 2;
+        while (getPairDist(lastLoc, current) * 1000 < radius && i >= 0) {
+            current = tripSegs.get(i).getLoc1();
+            i--;
+        }
+        Date maxTS = current.getTimestamp();
+        if (i < 0 || maxTS == minTS) {
+            maxTS = new Date(maxTS.getTime() - 1);
+        }
+        myDao.delAccGt(tripID, maxTS);
+        myDao.delLocGt(tripID, maxTS);
+
+        Log.d("Repository", String.format("%d, %d", minTS.getTime(), maxTS.getTime()));
+    }
+
+    private double getPairDist(@NonNull LocationData loc1, @NonNull LocationData loc2) {
+        final int r = 6371; // Earth's radius
+        double dLat = Math.toRadians(loc2.getLatitude() - loc1.getLatitude());
+        double dLon = Math.toRadians(loc2.getLongitude() - loc1.getLongitude());
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.sin(dLon / 2) * Math.sin(dLon / 2)
+                * Math.cos(Math.toRadians(loc1.getLatitude())) * Math.cos(Math.toRadians(loc2.getLatitude()));
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        //Log.d("Distance", String.format(Locale.getDefault(), "%f, %f, %f", dLat, dLon, r*c));
+        return r * c;
+    }
+
+    void delete(DataInstance data) {
+        AppDatabase.getExecutor().execute(() -> {
+            if (data instanceof LocationData) {
+                myDao.deleteLocation((LocationData) data);
+            } else if (data instanceof AccelerometerData) {
+                myDao.deleteAccel((AccelerometerData) data);
+            }
+        });
+    }
+
+    LiveData<List<Integer>> getTrips() {
+        return myDao.getTrips();
     }
 }

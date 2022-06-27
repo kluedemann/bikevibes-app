@@ -42,8 +42,7 @@ public class UploadService extends Service {
     private boolean isUploading = false;
     private ExecutorService uploadExecutor;
     private String userID;
-    private Date accTime;
-    private Date locTime;
+    private int tripID;
 
     /**
      * Required override method. This service cannot be bound to
@@ -106,13 +105,11 @@ public class UploadService extends Service {
     private void getPrefs() {
         final String PREFS = getString(R.string.preference_file_key);
         final String USER_KEY = getString(R.string.prefs_user_key);
-        final String ACC_TIME_KEY = getString(R.string.prefs_time_key);
-        final String LOC_TIME_KEY = getString(R.string.prefs_loc_time_key);
+        final String TRIP_KEY = getString(R.string.prefs_trip_key);
 
         SharedPreferences sharedPref = getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         userID = sharedPref.getString(USER_KEY, null);
-        accTime = new Date(sharedPref.getLong(ACC_TIME_KEY, 0));
-        locTime = new Date(sharedPref.getLong(LOC_TIME_KEY, accTime.getTime()));
+        tripID = sharedPref.getInt(TRIP_KEY, 0);
 
         // Initialize user/trip ids on first opening of app
         if (userID == null) {
@@ -129,11 +126,8 @@ public class UploadService extends Service {
     private void uploadData() {
         // Query data
 
-        //Log.d(TAG, String.format("%d", accTime));
-        List<LocationData> locations = repository.getLocList(locTime);
-        locTime = repository.getLocTime();
-        List<AccelerometerData> accel_readings = repository.getAccelList(accTime);
-        accTime = repository.getAccTime();
+        List<LocationData> locations = repository.getLocs(tripID);
+        List<AccelerometerData> accel_readings = repository.getAccels(tripID);
 
         // Initialize counters
         numToUpload = locations.size() + accel_readings.size();
@@ -171,7 +165,7 @@ public class UploadService extends Service {
             //Log.d(TAG, String.format("ACCEL: %f, %f, %f, %d", acc.x, acc.y, acc.z, acc.timestamp));
         }
 
-        writePrefs();
+        //writePrefs();
     }
 
     /**
@@ -190,6 +184,9 @@ public class UploadService extends Service {
             // onResponse: Called upon receiving a response from the server
             //Log.d(TAG, String.format("SUCCESS: %s", isSuccess));
             boolean isSuccess = response.optBoolean(getString(R.string.HTTP_success_key), false);
+            if (isSuccess) {
+                repository.delete(data);
+            }
             requestCompleted(isSuccess);
         }, error -> {
             // onErrorResponse: Called upon receiving an error response
@@ -206,6 +203,7 @@ public class UploadService extends Service {
             } else if (error instanceof ServerError && error.networkResponse.statusCode == 500) {
                 // Discard local copy if server has duplicate data
                 Log.d(TAG, "Duplicate!");
+                repository.delete(data);
             }
             requestCompleted(false);
         });
@@ -263,21 +261,21 @@ public class UploadService extends Service {
     /**
      * Save the new minimum timestamp upon uploading data.
      */
-    private void writePrefs() {
-        final String PREFS = getString(R.string.preference_file_key);
-        final String ACC_TIME_KEY = getString(R.string.prefs_time_key);
-        final String LOC_TIME_KEY = getString(R.string.prefs_loc_time_key);
-
-        SharedPreferences sharedPref = getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPref.edit();
-        if (accTime != null) {
-            editor.putLong(ACC_TIME_KEY, accTime.getTime());
-        }
-        if (locTime != null) {
-            editor.putLong(LOC_TIME_KEY, locTime.getTime());
-        }
-        editor.apply();
-    }
+//    private void writePrefs() {
+//        final String PREFS = getString(R.string.preference_file_key);
+//        final String ACC_TIME_KEY = getString(R.string.prefs_time_key);
+//        final String LOC_TIME_KEY = getString(R.string.prefs_loc_time_key);
+//
+//        SharedPreferences sharedPref = getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+//        SharedPreferences.Editor editor = sharedPref.edit();
+//        if (accTime != null) {
+//            editor.putLong(ACC_TIME_KEY, accTime.getTime());
+//        }
+//        if (locTime != null) {
+//            editor.putLong(LOC_TIME_KEY, locTime.getTime());
+//        }
+//        editor.apply();
+//    }
 
     public static String getAction() {
         return ACTION_UPLOAD;

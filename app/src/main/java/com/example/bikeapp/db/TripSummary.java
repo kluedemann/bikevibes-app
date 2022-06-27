@@ -19,11 +19,24 @@ public class TripSummary {
 
     private List<Segment> segments;
 
-    public TripSummary(int tripID, List<LocationData> locs, Date start, Date end, double bumpiness) {
+//    public TripSummary(int tripID, List<LocationData> locs, Date start, Date end, double bumpiness) {
+//        this.tripID = tripID;
+//        this.start = start;
+//        this.end = end;
+//        this.dist = getDist(locs);
+//        this.speed = getAvgSpeed(start, end);
+//        this.bumpiness = bumpiness;
+//        this.zoom = 10;
+//        this.centerLat = 53.5351;
+//        this.centerLon = -113.4938;
+//        this.segments = new ArrayList<>();
+//    }
+
+    public TripSummary(int tripID, List<Segment> segs, Date start, Date end, double bumpiness) {
         this.tripID = tripID;
         this.start = start;
         this.end = end;
-        this.dist = getDist(locs);
+        this.dist = getDist(segs);
         this.speed = getAvgSpeed(start, end);
         this.bumpiness = bumpiness;
         this.zoom = 10;
@@ -46,20 +59,36 @@ public class TripSummary {
         return 0;
     }
 
+
+//    private double getDist(@NonNull List<LocationData> locs) {
+//        if (locs.size() < 2) {
+//            return 0;
+//        }
+//        double dist = 0;
+//        LocationData prev = locs.get(0);
+//        LocationData current;
+//        for (int i = 1; i < locs.size(); i++) {
+//            current = locs.get(i);
+//            dist += getPairDist(current, prev);
+//            prev = current;
+//        }
+//        return dist;
+//    }
+
     /**
      * Get the total distance travelled in the trip.
-     * @param locs - list of location instances
+     * @param segs - list of location instances
      * @return dist - the distance travelled in km
      */
-    private double getDist(@NonNull List<LocationData> locs) {
-        if (locs.size() < 2) {
+    private double getDist(@NonNull List<Segment> segs) {
+        if (segs.size() < 1) {
             return 0;
         }
         double dist = 0;
-        LocationData prev = locs.get(0);
+        LocationData prev = segs.get(0).getLoc1();
         LocationData current;
-        for (int i = 1; i < locs.size(); i++) {
-            current = locs.get(i);
+        for (int i = 0; i < segs.size(); i++) {
+            current = segs.get(i).getLoc2();
             dist += getPairDist(current, prev);
             prev = current;
         }

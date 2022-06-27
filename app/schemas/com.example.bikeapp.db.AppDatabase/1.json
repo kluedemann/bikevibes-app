@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "a332d4555f8cc28cc6859268c6c4366e",
+    "identityHash": "b99fa57e5d363be05f589476d88c6c3d",
     "entities": [
       {
         "tableName": "AccelerometerData",
@@ -85,12 +85,81 @@
         },
         "indices": [],
         "foreignKeys": []
+      },
+      {
+        "tableName": "Segment",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`tripID` INTEGER NOT NULL, `ts1` INTEGER NOT NULL, `lat1` REAL NOT NULL, `lon1` REAL NOT NULL, `ts2` INTEGER NOT NULL, `lat2` REAL NOT NULL, `lon2` REAL NOT NULL, `rmsZAccel` REAL NOT NULL, `maxZAccel` REAL NOT NULL, PRIMARY KEY(`tripID`, `ts1`))",
+        "fields": [
+          {
+            "fieldPath": "tripID",
+            "columnName": "tripID",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ts1",
+            "columnName": "ts1",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lat1",
+            "columnName": "lat1",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lon1",
+            "columnName": "lon1",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ts2",
+            "columnName": "ts2",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lat2",
+            "columnName": "lat2",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lon2",
+            "columnName": "lon2",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rmsZAccel",
+            "columnName": "rmsZAccel",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "maxZAccel",
+            "columnName": "maxZAccel",
+            "affinity": "REAL",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "tripID",
+            "ts1"
+          ],
+          "autoGenerate": false
+        },
+        "indices": [],
+        "foreignKeys": []
       }
     ],
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a332d4555f8cc28cc6859268c6c4366e')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'b99fa57e5d363be05f589476d88c6c3d')"
     ]
   }
 }

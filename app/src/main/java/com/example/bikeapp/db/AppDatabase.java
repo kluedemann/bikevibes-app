@@ -15,7 +15,7 @@ import java.util.concurrent.Executors;
  * Builds the database and offers access to its thread pool and Data Access Object.
  * The database instance follows a singleton pattern.
  */
-@Database(entities = {AccelerometerData.class, LocationData.class}, version = 1)
+@Database(entities = {AccelerometerData.class, LocationData.class, Segment.class}, version = 1)
 @TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
 

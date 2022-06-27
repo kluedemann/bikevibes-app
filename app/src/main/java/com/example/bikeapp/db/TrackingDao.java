@@ -1,5 +1,6 @@
 package com.example.bikeapp.db;
 
+import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Delete;
 import androidx.room.Insert;
@@ -27,6 +28,12 @@ public interface TrackingDao {
 
     @Query("SELECT * FROM AccelerometerData WHERE timestamp > :minTimestamp")
     List<AccelerometerData> getAccel(Date minTimestamp);
+
+    @Query("SELECT * FROM LocationData WHERE tripID <= :maxTrip")
+    List<LocationData> getLocList(int maxTrip);
+
+    @Query("SELECT * FROM accelerometerdata WHERE tripID <= :maxTrip")
+    List<AccelerometerData> getAccList(int maxTrip);
 
     @Delete
     void deleteLocation(LocationData loc);
@@ -70,8 +77,20 @@ public interface TrackingDao {
     @Query("SELECT MIN(longitude) FROM LocationData WHERE tripID=:tripID")
     double getMinLon(int tripID);
 
+    @Query("SELECT MAX(lat2) FROM segment WHERE tripID=:tripID")
+    double getMaxLatSeg(int tripID);
+
+    @Query("SELECT MIN(lat2) FROM segment WHERE tripID=:tripID")
+    double getMinLatSeg(int tripID);
+
+    @Query("SELECT MAX(lon2) FROM segment WHERE tripID=:tripID")
+    double getMaxLonSeg(int tripID);
+
+    @Query("SELECT MIN(lon2) FROM segment WHERE tripID=:tripID")
+    double getMinLonSeg(int tripID);
+
     @Query("SELECT AVG(z * z) FROM AccelerometerData WHERE timestamp >= :start AND timestamp <= :end")
-    double getRMSTime(Date start, Date end);
+    double getRmsZAccel(Date start, Date end);
 
     @Query("SELECT MIN(tripID) FROM AccelerometerData")
     int getMinTrip();
@@ -81,4 +100,40 @@ public interface TrackingDao {
 
     @Query("DELETE FROM LocationData")
     void deleteAllLoc();
+
+    @Query("SELECT MAX(ABS(z)) FROM AccelerometerData WHERE timestamp >= :start AND timestamp <= :end")
+    double getMaxZAccel(Date start, Date end);
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void insertSegments(List<Segment> segments);
+
+    @Query("SELECT MIN(ts1) FROM segment WHERE tripID = :tripID")
+    Date getTripStartSeg(int tripID);
+
+    @Query("SELECT MAX(ts2) FROM segment WHERE tripID = :tripID")
+    Date getTripEndSeg(int tripID);
+
+    @Query("SELECT AVG(rmsZAccel) FROM segment WHERE tripID = :tripID")
+    double getAvgAccel(int tripID);
+
+    @Query("SELECT * FROM segment WHERE tripID = :tripID")
+    List<Segment> getSegments(int tripID);
+
+    @Query("DELETE FROM accelerometerdata WHERE tripID = :tripID AND timestamp < :timestamp")
+    void delAccLt(int tripID, Date timestamp);
+
+    @Query("DELETE FROM locationdata WHERE tripID = :tripID AND timestamp < :timestamp")
+    void delLocLt(int tripID, Date timestamp);
+
+    @Query("DELETE FROM accelerometerdata WHERE tripID = :tripID AND timestamp > :timestamp")
+    void delAccGt(int tripID, Date timestamp);
+
+    @Query("DELETE FROM locationdata WHERE tripID = :tripID AND timestamp > :timestamp")
+    void delLocGt(int tripID, Date timestamp);
+
+    @Query("SELECT DISTINCT(tripID) FROM segment ORDER BY tripID ASC")
+    LiveData<List<Integer>> getTrips();
+
+    @Query("DELETE FROM segment")
+    void deleteAllSegments();
 }
