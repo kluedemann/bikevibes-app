@@ -4,8 +4,8 @@
     <PreferenceCategory app:title="Privacy">
 
         <Preference
-            app:summary="We keep no identifying information on our server other than your anonymous user ID. You may request that your data be deleted from the server at any time."
-            app:title="Data Policy" />
+            app:summary="@string/data_policy_text"
+            app:title="@string/data_policy_title" />
 
         <SeekBarPreference
             android:max="500"
@@ -17,7 +17,7 @@
             app:title="Blackout Radius" />
 
         <Preference
-            app:key="user_id"
+            app:key="@string/user_id_pref_key"
             app:summary="your user id"
             app:title="User ID" />
 
@@ -31,7 +31,7 @@
 
     <PreferenceCategory app:title="Storage">
         <Preference
-            app:key="delete_local"
+            app:key="@string/delete_local_key"
             app:title="Delete Local Data" />
 
 
@@ -40,7 +40,7 @@
     <PreferenceCategory app:title="Contact">
 
         <Preference
-            app:key="email"
+            app:key="@string/email_key"
             app:summary="@string/email_address"
             app:title="Email Us" />
     </PreferenceCategory>

@@ -70,4 +70,20 @@
     <string name="tforest_url">https://www.thunderforest.com/</string>
     <string name="tforest_title">Thunderforest</string>
     <string name="tforest_text">Map tile provider</string>
+
+    <string name="deleted_text">Data Deleted!</string>
+    <string name="confirmation_text">Click again to confirm</string>
+    <string name="delete_local_key">delete_local_pref</string>
+
+    <string name="email_key">email_pref</string>
+
+    <string name="clipboard_text">Copied to Clipboard</string>
+
+    <string name="no_email_client">No email client found</string>
+    <string name="no_user_id">Upload to generate a user ID</string>
+
+    <string name="user_id_pref_key">user_id_pref</string>
+
+    <string name="data_policy_title">Data Policy</string>
+    <string name="data_policy_text">We keep no identifying information on our server other than your anonymous user ID. You may request that your data be deleted from the server at any time.</string>
 </resources>

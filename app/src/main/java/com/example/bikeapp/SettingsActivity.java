@@ -51,21 +51,21 @@ public class SettingsActivity extends AppCompatActivity {
 
                 // Setup user id preference
                 SharedPreferences prefs = app.getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
-                String userID = prefs.getString(getString(R.string.prefs_user_key), "Upload to generate a user ID");
-                Preference userIdPref = findPreference("user_id");
+                String userID = prefs.getString(getString(R.string.prefs_user_key), getString(R.string.no_user_id));
+                Preference userIdPref = findPreference(getString(R.string.user_id_pref_key));
                 if (userIdPref != null) {
                     userIdPref.setSummary(userID);
                     userIdPref.setOnPreferenceClickListener(preference -> {
                         ClipboardManager clipboard = (ClipboardManager) app.getSystemService(Context.CLIPBOARD_SERVICE);
                         ClipData clip = ClipData.newPlainText("User ID", userID);
                         clipboard.setPrimaryClip(clip);
-                        Toast.makeText(app, "Copied to Clipboard", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(app, getString(R.string.clipboard_text), Toast.LENGTH_SHORT).show();
                         return true;
                     });
                 }
 
                 // Setup email preference
-                Preference emailPref = findPreference("email");
+                Preference emailPref = findPreference(getString(R.string.email_key));
                 if (emailPref != null) {
                     emailPref.setOnPreferenceClickListener(preference -> {
                         Intent i = new Intent(Intent.ACTION_SENDTO);
@@ -73,20 +73,20 @@ public class SettingsActivity extends AppCompatActivity {
                         try {
                             startActivity(i);
                         } catch (ActivityNotFoundException ex) {
-                            Toast.makeText(app, "No email client found.", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(app, getString(R.string.no_email_client), Toast.LENGTH_SHORT).show();
                         }
                         return true;
                     });
                 }
 
-                Preference deletePref = findPreference("delete_local");
+                Preference deletePref = findPreference(getString(R.string.delete_local_key));
                 if (deletePref != null) {
                     deletePref.setOnPreferenceClickListener(preference -> {
                         if (delete_count == 0) {
-                            preference.setSummary("Click again to confirm");
+                            preference.setSummary(getString(R.string.confirmation_text));
                             delete_count++;
                         } else {
-                            Toast.makeText(app, "Data Deleted!", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(app, getString(R.string.deleted_text), Toast.LENGTH_SHORT).show();
                             preference.setSummary("");
                             delete_count = 0;
                             app.getRepository().deleteAll();
