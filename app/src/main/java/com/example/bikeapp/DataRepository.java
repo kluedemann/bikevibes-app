@@ -27,7 +27,6 @@ public class DataRepository {
     private static volatile DataRepository instance;
 
     private final TrackingDao myDao;
-    private final MutableLiveData<Integer> minTripID = new MutableLiveData<>();
     private final MutableLiveData<TripSummary> trip = new MutableLiveData<>();
 
     DataRepository(@NonNull final AppDatabase database) {
@@ -67,54 +66,33 @@ public class DataRepository {
     }
 
     /**
-     * Return all accelerometer readings that occurred after minTime.
+     * Return all accelerometer readings with a tripID less than or equal to maxTrip.
      * WARNING: This method CANNOT be called from the Main/UI thread
-     * @param minTime - the minimum UNIX timestamp in milliseconds
+     * @param maxTrip - the maximum trip ID
      * @return - a list of AccelerometerData readings
      */
-    List<AccelerometerData> getAccelList(Date minTime) {
-        return myDao.getAccel(minTime);
-    }
     List<AccelerometerData> getAccels(int maxTrip) {
         return myDao.getAccList(maxTrip);
     }
 
     /**
-     * Return all GPS readings that occurred after minTime.
+     * Return all GPS readings with a tripID less than or equal to maxTrip.
      * WARNING: This method CANNOT be called from the Main/UI thread
-     * @param minTime - the minimum UNIX timestamp in milliseconds
+     * @param maxTrip - the maximum trip ID
      * @return - a list of LocationData instances
      */
-    List<LocationData> getLocList(Date minTime) {
-        return myDao.getLocation(minTime);
-    }
     List<LocationData> getLocs(int maxTrip) {
         return myDao.getLocList(maxTrip);
     }
 
-    /**
-     * Return the maximum accelerometer timestamp that currently exists in the database.
-     * @return - the maximum UNIX timestamp in milliseconds
-     */
-    Date getAccTime() {
-        return myDao.getMaxAccelTime();
-    }
-
-    /**
-     * Return the maximum GPS timestamp that currently exists in the database.
-     * @return - the maximum UNIX timestamp in milliseconds
-     */
-    Date getLocTime() {
-        return myDao.getMaxLocTime();
-    }
 
     // ************************* LiveData Getter Methods ************************************
-    LiveData<Integer> getMinTrip() {
-        return minTripID;
-    }
-
     LiveData<TripSummary> getTripSummary() {
         return trip;
+    }
+
+    LiveData<List<Integer>> getTrips() {
+        return myDao.getTrips();
     }
 
     /**
@@ -137,42 +115,6 @@ public class DataRepository {
     }
 
     /**
-     * Update the minimum tripID from the database.
-     */
-    public void updateMinTrip() {
-        AppDatabase.getExecutor().execute(() -> minTripID.postValue(myDao.getMinTrip()));
-    }
-
-
-//    private void updateMap(@NonNull TripSummary trip, @NonNull List<LocationData> locs, int tripID) {
-//        double maxLat = myDao.getMaxLat(tripID);
-//        double minLat = myDao.getMinLat(tripID);
-//        double maxLon = myDao.getMaxLon(tripID);
-//        double minLon = myDao.getMinLon(tripID);
-//
-//        //Log.d("MAP", String.format("%f, %f, %f, %f", maxLat, minLat, maxLon, minLon));
-//
-//        // Calculate the map's zoom level
-//        // See https://wiki.openstreetmap.org/wiki/Zoom_levels
-//        double latDif = maxLat - minLat;
-//        double lonDif = maxLon - minLon;
-//
-//        // Find the largest tile that the entire trip can fit into and add 1 level
-//        int zoomLat = Math.min((int) ((-Math.log(latDif / 180) / Math.log(2)) + 0.5), 20);
-//        int zoomLon = Math.min((int) ((-Math.log(lonDif / 360) / Math.log(2)) + 0.5), 20);
-//
-//
-//        // Calculate the map's center position
-//        double centerLat = (maxLat + minLat) / 2;
-//        double centerLon = (maxLon + minLon) / 2;
-//
-//        // Update the values
-//        List<Segment> segments = getSegments(locs, tripID);
-//        double zoom = Math.min(zoomLat, zoomLon);
-//        trip.setMap(segments, centerLat, centerLon, zoom);
-//    }
-
-    /**
      * Update the center of the map, zoom level, and lines to draw from
      * the list of location instances recorded during a given trip.
      *
@@ -189,10 +131,10 @@ public class DataRepository {
      */
     private void updateMap(@NonNull TripSummary trip, @NonNull List<Segment> segs, int tripID) {
         LocationData firstLoc = segs.get(0).getLoc1();
-        double maxLat = Math.max(myDao.getMaxLatSeg(tripID), firstLoc.getLatitude());
-        double minLat = Math.min(myDao.getMinLatSeg(tripID), firstLoc.getLatitude());
-        double maxLon = Math.max(myDao.getMaxLonSeg(tripID), firstLoc.getLongitude());
-        double minLon = Math.min(myDao.getMinLonSeg(tripID), firstLoc.getLongitude());
+        double maxLat = Math.max(myDao.getMaxLat(tripID), firstLoc.getLatitude());
+        double minLat = Math.min(myDao.getMinLat(tripID), firstLoc.getLatitude());
+        double maxLon = Math.max(myDao.getMaxLon(tripID), firstLoc.getLongitude());
+        double minLon = Math.min(myDao.getMinLon(tripID), firstLoc.getLongitude());
 
         //Log.d("MAP", String.format("%f, %f, %f, %f", maxLat, minLat, maxLon, minLon));
 
@@ -238,14 +180,24 @@ public class DataRepository {
         return segments;
     }
 
+    /**
+     * Delete all records from the local database and clear the current trip.
+     */
     public void deleteAll() {
         AppDatabase.getExecutor().execute(() -> {
             myDao.deleteAllAccel();
             myDao.deleteAllLoc();
             myDao.deleteAllSegments();
+            trip.postValue(null);
         });
     }
 
+    /**
+     * Generate the segments and insert them into the database.
+     * Blackout the raw data values within the blackout radius.
+     * @param tripID - the trip ID to process
+     * @param blackout_radius - the radius around the start and end points to remove
+     */
     public void createSegments(int tripID, int blackout_radius) {
         AppDatabase.getExecutor().execute(() -> {
             List<LocationData> locs = myDao.getTripLocs(tripID);
@@ -258,55 +210,29 @@ public class DataRepository {
         });
     }
 
+    /**
+     * Remove the raw data within the blackout radius around the start and end points of a trip.
+     * It removes all data until a timestamp with a location recorded outside of the radius.
+     * @param radius - the distance around the start/end points that will be removed
+     * @param tripSegs - the Segments that compose of the trip
+     * @param tripID - the trip ID
+     */
     private void blackoutData(int radius, @NonNull List<Segment> tripSegs, int tripID) {
         if (tripSegs.size() < 3) {
             myDao.delAccGt(tripID, new Date(0));
             myDao.delLocGt(tripID, new Date(0));
             return;
         }
-        LocationData firstLoc = tripSegs.get(0).getLoc1();
-        LocationData current = tripSegs.get(0).getLoc2();
-        int i = 1;
-        while (getPairDist(firstLoc, current) * 1000 < radius && i < tripSegs.size()) {
-            current = tripSegs.get(i).getLoc2();
-            i++;
-        }
-        Date minTS = current.getTimestamp();
-        if (i == tripSegs.size()) {
-            minTS = new Date(minTS.getTime() + 1);
-        }
-        myDao.delAccLt(tripID, minTS);
-        myDao.delLocLt(tripID, minTS);
-
-        LocationData lastLoc = tripSegs.get(tripSegs.size() - 1).getLoc2();
-        current = tripSegs.get(tripSegs.size() - 1).getLoc1();
-        i = tripSegs.size() - 2;
-        while (getPairDist(lastLoc, current) * 1000 < radius && i >= 0) {
-            current = tripSegs.get(i).getLoc1();
-            i--;
-        }
-        Date maxTS = current.getTimestamp();
-        if (i < 0 || maxTS == minTS) {
-            maxTS = new Date(maxTS.getTime() - 1);
-        }
-        myDao.delAccGt(tripID, maxTS);
-        myDao.delLocGt(tripID, maxTS);
-
+        Date minTS = getBlackoutStart(tripSegs, radius);
+        Date maxTS = getBlackoutEnd(tripSegs, radius);
+        deleteBlackoutData(tripID, minTS, maxTS);
         Log.d("Repository", String.format("%d, %d", minTS.getTime(), maxTS.getTime()));
     }
 
-    private double getPairDist(@NonNull LocationData loc1, @NonNull LocationData loc2) {
-        final int r = 6371; // Earth's radius
-        double dLat = Math.toRadians(loc2.getLatitude() - loc1.getLatitude());
-        double dLon = Math.toRadians(loc2.getLongitude() - loc1.getLongitude());
-        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
-                + Math.sin(dLon / 2) * Math.sin(dLon / 2)
-                * Math.cos(Math.toRadians(loc1.getLatitude())) * Math.cos(Math.toRadians(loc2.getLatitude()));
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        //Log.d("Distance", String.format(Locale.getDefault(), "%f, %f, %f", dLat, dLon, r*c));
-        return r * c;
-    }
-
+    /**
+     * Delete the given data instance from the database.
+     * @param data - the accelerometer or GPS recording to delete
+     */
     void delete(DataInstance data) {
         AppDatabase.getExecutor().execute(() -> {
             if (data instanceof LocationData) {
@@ -317,7 +243,66 @@ public class DataRepository {
         });
     }
 
-    LiveData<List<Integer>> getTrips() {
-        return myDao.getTrips();
+    /**
+     * Return the timestamp before which to delete.
+     * Usually the timestamp of the first location outside of the blackout radius.
+     * Adds one if it is the last recorded location, so it is also deleted.
+     * @param tripSegs - the trip segments
+     * @param radius - the radius to delete in m
+     * @return minTS - the Date before which to delete records
+     */
+    private Date getBlackoutStart(@NonNull List<Segment> tripSegs, double radius) {
+        LocationData firstLoc = tripSegs.get(0).getLoc1();
+        LocationData current = tripSegs.get(0).getLoc2();
+        int i = 1;
+        while (firstLoc.getDist(current) * 1000 < radius && i < tripSegs.size()) {
+            current = tripSegs.get(i).getLoc2();
+            i++;
+        }
+        Date minTS = current.getTimestamp();
+        if (i == tripSegs.size()) {
+            minTS = new Date(minTS.getTime() + 1);
+        }
+        return minTS;
+    }
+
+    /**
+     * Return the timestamp after which to delete.
+     * Usually the timestamp of the last location outside of the blackout radius.
+     * Subtracts one if it is the first recorded location, so it is also deleted.
+     * @param tripSegs - the trip segments
+     * @param radius - the radius to delete in m
+     * @return maxTS - the Date after which to delete records
+     */
+    private Date getBlackoutEnd(@NonNull List<Segment> tripSegs, double radius) {
+        LocationData lastLoc = tripSegs.get(tripSegs.size() - 1).getLoc2();
+        LocationData current = tripSegs.get(tripSegs.size() - 1).getLoc1();
+        int i = tripSegs.size() - 2;
+        while (lastLoc.getDist(current) * 1000 < radius && i >= 0) {
+            current = tripSegs.get(i).getLoc1();
+            i--;
+        }
+        Date maxTS = current.getTimestamp();
+        if (i < 0) {
+            maxTS = new Date(maxTS.getTime() - 1);
+        }
+        return maxTS;
+    }
+
+    /**
+     * Delete the trip data before minTS and after maxTS.
+     * If they are equal, delete that point as well.
+     * @param tripID - the trip to delete from
+     * @param minTS - the Date before which to delete
+     * @param maxTS - the Date after which to delete
+     */
+    private void deleteBlackoutData(int tripID, Date minTS, Date maxTS) {
+        if (minTS == maxTS) {
+            maxTS = new Date(maxTS.getTime() - 1);
+        }
+        myDao.delAccLt(tripID, minTS);
+        myDao.delLocLt(tripID, minTS);
+        myDao.delAccGt(tripID, maxTS);
+        myDao.delLocGt(tripID, maxTS);
     }
 }

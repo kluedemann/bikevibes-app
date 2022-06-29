@@ -115,14 +115,13 @@ public class MainActivity extends AppCompatActivity {
         map.setTileSource(new ThunderforestTileSource(ctx, ThunderforestTileSource.NEIGHBOURHOOD));
         map.setMultiTouchControls(true);
         map.setTilesScaledToDpi(true);
+        setMapZoom(10.0);
+        setMapCenter(53.5351, -113.4938);
 
         // Setup ViewModel and live data
         viewModel = new ViewModelProvider(this).get(TrackingViewModel.class);
         viewModel.getTripSummary().observe(this, this::updateTrip);
         viewModel.getTrips().observe(this, viewModel::setTrips);
-
-
-        //viewModel.updateMinTrip();
 
         // Request location permissions
         String[] permissions = {Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.WRITE_EXTERNAL_STORAGE};
@@ -159,8 +158,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
 
-
-
         if (!isBound) {
             // Bind TrackingService
             Intent intent = new Intent(getApplicationContext(), TrackingService.class);
@@ -172,7 +169,6 @@ public class MainActivity extends AppCompatActivity {
         uploadButton.setEnabled(true);
 
         map.onResume();
-        viewModel.update();
     }
 
     /**
@@ -374,6 +370,22 @@ public class MainActivity extends AppCompatActivity {
             setDistText(trip.getDist());
             setSpeedText(trip.getSpeed());
             setBumpText(trip.getBumpiness());
+        } else {
+            resetTrip();
         }
+    }
+
+    /**
+     * Reset trip UI elements if there is none.
+     * Called when the user deletes their data.
+     */
+    private void resetTrip() {
+        final String UNKNOWN_TEXT = getString(R.string.unknown_text);
+        for (TextView dataView : dataViews) {
+            dataView.setText(UNKNOWN_TEXT);
+        }
+        setMapLines(new ArrayList<>());
+        setMapZoom(10.0);
+        setMapCenter(53.5351, -113.4938);
     }
 }

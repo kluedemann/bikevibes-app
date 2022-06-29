@@ -16,21 +16,7 @@ public class TripSummary {
     private double zoom;
     private double centerLat;
     private double centerLon;
-
     private List<Segment> segments;
-
-//    public TripSummary(int tripID, List<LocationData> locs, Date start, Date end, double bumpiness) {
-//        this.tripID = tripID;
-//        this.start = start;
-//        this.end = end;
-//        this.dist = getDist(locs);
-//        this.speed = getAvgSpeed(start, end);
-//        this.bumpiness = bumpiness;
-//        this.zoom = 10;
-//        this.centerLat = 53.5351;
-//        this.centerLon = -113.4938;
-//        this.segments = new ArrayList<>();
-//    }
 
     public TripSummary(int tripID, List<Segment> segs, Date start, Date end, double bumpiness) {
         this.tripID = tripID;
@@ -59,22 +45,6 @@ public class TripSummary {
         return 0;
     }
 
-
-//    private double getDist(@NonNull List<LocationData> locs) {
-//        if (locs.size() < 2) {
-//            return 0;
-//        }
-//        double dist = 0;
-//        LocationData prev = locs.get(0);
-//        LocationData current;
-//        for (int i = 1; i < locs.size(); i++) {
-//            current = locs.get(i);
-//            dist += getPairDist(current, prev);
-//            prev = current;
-//        }
-//        return dist;
-//    }
-
     /**
      * Get the total distance travelled in the trip.
      * @param segs - list of location instances
@@ -89,31 +59,10 @@ public class TripSummary {
         LocationData current;
         for (int i = 0; i < segs.size(); i++) {
             current = segs.get(i).getLoc2();
-            dist += getPairDist(current, prev);
+            dist += current.getDist(prev);
             prev = current;
         }
         return dist;
-    }
-
-    /**
-     * Get the distance between a pair of location instances.
-     * Uses the Haversine formula to get the Great Circle Distance.
-     * Source: https://stackoverflow.com/questions/27928/calculate-distance-between-two-latitude-longitude-points-haversine-formula
-     *
-     * @param loc1 - the first location point
-     * @param loc2 - the second location point
-     * @return the distance between them in km
-     */
-    private double getPairDist(@NonNull LocationData loc1, @NonNull LocationData loc2) {
-        final int r = 6371; // Earth's radius
-        double dLat = Math.toRadians(loc2.getLatitude() - loc1.getLatitude());
-        double dLon = Math.toRadians(loc2.getLongitude() - loc1.getLongitude());
-        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
-                + Math.sin(dLon / 2) * Math.sin(dLon / 2)
-                * Math.cos(Math.toRadians(loc1.getLatitude())) * Math.cos(Math.toRadians(loc2.getLatitude()));
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        //Log.d("Distance", String.format(Locale.getDefault(), "%f, %f, %f", dLat, dLon, r*c));
-        return r * c;
     }
 
     /**

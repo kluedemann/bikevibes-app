@@ -26,9 +26,6 @@ public class TrackingViewModel extends AndroidViewModel {
 
     private final DataRepository mRepository;
     private List<Integer> trips;
-    //private int tripID;
-    //private int maxID;
-    //private int minID = 1;
     private int tripIndex = -1;
 
     public TrackingViewModel(Application application) {
@@ -38,8 +35,6 @@ public class TrackingViewModel extends AndroidViewModel {
     }
 
     // ************************** LiveData Getter Methods ***********************************
-    //LiveData<Integer> getMinTrip() {return mRepository.getMinTrip();}
-
     LiveData<TripSummary> getTripSummary() {
         return mRepository.getTripSummary();
     }
@@ -54,16 +49,6 @@ public class TrackingViewModel extends AndroidViewModel {
             mRepository.update(trips.get(tripIndex));
         }
     }
-
-    /**
-     * Update the minimum trip value that can be shown
-     * @param minTrip - the tripID of the first trip in the database
-     */
-//    void setMinTrip(Integer minTrip) {
-//        if (minTrip > 1) {
-//            minID = minTrip;
-//        }
-//    }
 
     /**
      * Decrement the trip shown in the interface.
@@ -93,33 +78,6 @@ public class TrackingViewModel extends AndroidViewModel {
             return true;
         }
         return false;
-    }
-
-    /**
-     * Increment the maximum trip that can be shown.
-     * Called when a new trip is added.
-     */
-//    void incrementMax() {
-//        maxID++;
-//    }
-
-    /**
-     * Get the current tripID and assign it to tripID and maxID.
-     * Accesses the value from the shared preferences file.
-     */
-//    private void getTripID() {
-//        Application app = getApplication();
-//        String PREFS = app.getString(R.string.preference_file_key);
-//        SharedPreferences sharedPref = app.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-//        tripID = sharedPref.getInt(app.getString(R.string.prefs_trip_key), 0);
-//        maxID = tripID;
-//    }
-
-    /**
-     * Update the minimum tripID present in the database
-     */
-    public void updateMinTrip() {
-        mRepository.updateMinTrip();
     }
 
     /**
@@ -172,6 +130,10 @@ public class TrackingViewModel extends AndroidViewModel {
         return Color.parseColor(colorString);
     }
 
+    /**
+     * Update the list of tripIDs in the database
+     * @param trips - the trip ID values in the Segments table
+     */
     void setTrips(List<Integer> trips) {
         this.trips = trips;
         if (tripIndex == -1) {

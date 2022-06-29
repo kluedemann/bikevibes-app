@@ -258,25 +258,6 @@ public class UploadService extends Service {
         stopSelf();
     }
 
-    /**
-     * Save the new minimum timestamp upon uploading data.
-     */
-//    private void writePrefs() {
-//        final String PREFS = getString(R.string.preference_file_key);
-//        final String ACC_TIME_KEY = getString(R.string.prefs_time_key);
-//        final String LOC_TIME_KEY = getString(R.string.prefs_loc_time_key);
-//
-//        SharedPreferences sharedPref = getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-//        SharedPreferences.Editor editor = sharedPref.edit();
-//        if (accTime != null) {
-//            editor.putLong(ACC_TIME_KEY, accTime.getTime());
-//        }
-//        if (locTime != null) {
-//            editor.putLong(LOC_TIME_KEY, locTime.getTime());
-//        }
-//        editor.apply();
-//    }
-
     public static String getAction() {
         return ACTION_UPLOAD;
     }

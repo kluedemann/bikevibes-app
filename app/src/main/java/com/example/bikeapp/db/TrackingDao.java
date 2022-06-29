@@ -23,12 +23,6 @@ public interface TrackingDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertAccel(AccelerometerData acc);
 
-    @Query("SELECT * FROM LocationData WHERE timestamp > :minTimestamp")
-    List<LocationData> getLocation(Date minTimestamp);
-
-    @Query("SELECT * FROM AccelerometerData WHERE timestamp > :minTimestamp")
-    List<AccelerometerData> getAccel(Date minTimestamp);
-
     @Query("SELECT * FROM LocationData WHERE tripID <= :maxTrip")
     List<LocationData> getLocList(int maxTrip);
 
@@ -47,53 +41,23 @@ public interface TrackingDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertLocBatch(List<LocationData> locList);
 
-    @Query("SELECT MAX(timestamp) FROM AccelerometerData")
-    Date getMaxAccelTime();
-
-    @Query("SELECT MAX(timestamp) FROM LocationData")
-    Date getMaxLocTime();
-
-    @Query("SELECT MIN(timestamp) FROM AccelerometerData WHERE tripID=:tripID")
-    Date getTripStart(int tripID);
-
-    @Query("SELECT MAX(timestamp) FROM AccelerometerData WHERE tripID=:tripID")
-    Date getTripEnd(int tripID);
-
     @Query("SELECT * FROM LocationData WHERE tripID=:tripID ORDER BY timestamp ASC")
     List<LocationData> getTripLocs(int tripID);
 
-    @Query("SELECT AVG(z * z) FROM AccelerometerData WHERE tripID=:tripID")
-    double getMSAccel(int tripID);
-
-    @Query("SELECT MAX(latitude) FROM LocationData WHERE tripID=:tripID")
+    @Query("SELECT MAX(lat2) FROM segment WHERE tripID=:tripID")
     double getMaxLat(int tripID);
 
-    @Query("SELECT MIN(latitude) FROM LocationData WHERE tripID=:tripID")
+    @Query("SELECT MIN(lat2) FROM segment WHERE tripID=:tripID")
     double getMinLat(int tripID);
 
-    @Query("SELECT MAX(longitude) FROM LocationData WHERE tripID=:tripID")
+    @Query("SELECT MAX(lon2) FROM segment WHERE tripID=:tripID")
     double getMaxLon(int tripID);
 
-    @Query("SELECT MIN(longitude) FROM LocationData WHERE tripID=:tripID")
-    double getMinLon(int tripID);
-
-    @Query("SELECT MAX(lat2) FROM segment WHERE tripID=:tripID")
-    double getMaxLatSeg(int tripID);
-
-    @Query("SELECT MIN(lat2) FROM segment WHERE tripID=:tripID")
-    double getMinLatSeg(int tripID);
-
-    @Query("SELECT MAX(lon2) FROM segment WHERE tripID=:tripID")
-    double getMaxLonSeg(int tripID);
-
     @Query("SELECT MIN(lon2) FROM segment WHERE tripID=:tripID")
-    double getMinLonSeg(int tripID);
+    double getMinLon(int tripID);
 
     @Query("SELECT AVG(z * z) FROM AccelerometerData WHERE timestamp >= :start AND timestamp <= :end")
     double getRmsZAccel(Date start, Date end);
-
-    @Query("SELECT MIN(tripID) FROM AccelerometerData")
-    int getMinTrip();
 
     @Query("DELETE FROM AccelerometerData")
     void deleteAllAccel();

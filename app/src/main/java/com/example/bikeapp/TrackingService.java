@@ -231,7 +231,7 @@ public class TrackingService extends Service implements SensorEventListener, Loc
         LocationData locData = new LocationData(date, loc.getLatitude(), loc.getLongitude(), tripID);
         if (isTracking) {
             //repository.insert(locData);
-            Log.d(TAG, locData.toString());
+            //Log.d(TAG, locData.toString());
             locCache.add(locData);
             if (locCache.size() == 6) {
                 numInserted += 6;

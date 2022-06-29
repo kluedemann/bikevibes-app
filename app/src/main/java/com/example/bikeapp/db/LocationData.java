@@ -16,6 +16,7 @@ import java.util.Locale;
 @Entity
 public class LocationData extends DataInstance {
     private static final String URL_TEMPLATE = "http://162.246.157.171:8080/upload/location?user_id=%s&time_stamp=%d&trip_id=%d&latitude=%f&longitude=%f";
+    private static final int RADIUS = 6371;
 
     @PrimaryKey
     @NonNull
@@ -59,10 +60,38 @@ public class LocationData extends DataInstance {
         myDao.insertLocation(this);
     }
 
+    /**
+     * Get the distance between a pair of location instances.
+     * Uses the Haversine formula to get the Great Circle Distance.
+     * Source: https://stackoverflow.com/questions/27928/calculate-distance-between-two-latitude-longitude-points-haversine-formula
+     *
+     * @param loc - the location to calculate distance from
+     * @return the distance between them in km
+     */
+    public double getDist(@NonNull LocationData loc) {
+        double dLat = Math.toRadians(this.getLatitude() - loc.getLatitude());
+        double dLon = Math.toRadians(this.getLongitude() - loc.getLongitude());
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.sin(dLon / 2) * Math.sin(dLon / 2)
+                * Math.cos(Math.toRadians(this.getLatitude())) * Math.cos(Math.toRadians(loc.getLatitude()));
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        //Log.d("Distance", String.format(Locale.getDefault(), "%f, %f, %f", dLat, dLon, r*c));
+        return RADIUS * c;
+    }
+
+    @Override
+    @NonNull
+    public String toString() {
+        return String.format(Locale.getDefault(),"%d, %f, %f, %d", timestamp.getTime(), latitude, longitude, tripID);
+    }
+
+    // ******************************** Getter Methods ********************************************
+
     public long getTime() {
         return timestamp.getTime();
     }
 
+    @NonNull
     public Date getTimestamp() {
         return timestamp;
     }
@@ -79,7 +108,7 @@ public class LocationData extends DataInstance {
         return tripID;
     }
 
-    public void setTimestamp(Date timestamp) {
+    public void setTimestamp(@NonNull Date timestamp) {
         this.timestamp = timestamp;
     }
 
@@ -97,10 +126,5 @@ public class LocationData extends DataInstance {
 
     public GeoPoint getGeoPoint() {
         return new GeoPoint(latitude, longitude);
-    }
-
-    @NonNull
-    public String toString() {
-        return String.format(Locale.getDefault(),"%d, %f, %f, %d", timestamp.getTime(), latitude, longitude, tripID);
     }
 }
