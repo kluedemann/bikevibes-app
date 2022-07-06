@@ -16,10 +16,9 @@
             app:summary="Distance in meters around the start and end of a trip in which data is not tracked"
             app:title="Blackout Radius" />
 
-        <Preference
-            app:key="@string/user_id_pref_key"
-            app:summary="your user id"
-            app:title="User ID" />
+        <EditTextPreference
+            app:key="@string/alias_pref_key"
+            app:title="Alias" />
 
         <Preference
             app:summary="Please email us with your user id so we can delete it for you"
