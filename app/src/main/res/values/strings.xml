@@ -19,7 +19,7 @@
     <string name="first_trip">No previous trips</string>
 
     <!-- Preferences File-->
-    <string name="preference_file_key">com.example.bikeapp.TRACKING_INFO</string>
+    <string name="preference_file_key">com.bikevibes.bikeapp.TRACKING_INFO</string>
     <string name="prefs_user_key">user_id</string>
     <string name="prefs_trip_key">trip_id</string>
     <string name="prefs_time_key">timestamp</string>
