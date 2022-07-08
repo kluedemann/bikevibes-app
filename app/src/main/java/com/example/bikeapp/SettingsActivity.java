@@ -19,6 +19,7 @@ import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceManager;
 
 import com.android.volley.Request;
+import com.android.volley.ServerError;
 import com.android.volley.toolbox.JsonObjectRequest;
 
 import java.io.UnsupportedEncodingException;
@@ -207,7 +208,15 @@ public class SettingsActivity extends AppCompatActivity {
             }, error -> {
                 // onErrorResponse: Called upon receiving an error response
                 Log.e(TAG, error.toString());
-                requestCompleted(false, null);
+                Activity activity = getActivity();
+                if (activity != null) {
+                    Context ctx = activity.getApplicationContext();
+                    if (error instanceof ServerError && error.networkResponse.statusCode == 409) {
+                        Toast.makeText(ctx, "Error: Alias already exists", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(ctx, "Error: Alias not updated", Toast.LENGTH_SHORT).show();
+                    }
+                }
             });
 
             // Add request to the queue

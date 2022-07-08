@@ -21,7 +21,6 @@ import com.example.bikeapp.db.AccelerometerData;
 import com.example.bikeapp.db.DataInstance;
 import com.example.bikeapp.db.LocationData;
 
-import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -117,6 +116,16 @@ public class UploadService extends Service {
             SharedPreferences.Editor editor = sharedPref.edit();
             editor.putString(USER_KEY, userID);
             editor.apply();
+
+            final String url = String.format("http://162.246.157.171:8080/upload/alias?user_id=%s", userID);
+            JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, null, response -> {
+                // onResponse: Called upon receiving a response from the server
+            }, error -> {
+                // onErrorResponse: Called upon receiving an error response
+                Log.e(TAG, error.toString());
+            });
+            request.setTag(TAG);
+            queue.add(request);
         }
     }
 
@@ -200,7 +209,7 @@ public class UploadService extends Service {
                 intent.putExtra(getString(R.string.success_key), false);
                 intent.putExtra(getString(R.string.message_key), getString(R.string.timeout_text));
                 uploadCompleted(intent);
-            } else if (error instanceof ServerError && error.networkResponse.statusCode == 500) {
+            } else if (error instanceof ServerError && error.networkResponse.statusCode == 409) {
                 // Discard local copy if server has duplicate data
                 Log.d(TAG, "Duplicate!");
                 repository.delete(data);
