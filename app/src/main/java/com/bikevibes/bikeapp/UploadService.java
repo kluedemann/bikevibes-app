@@ -154,7 +154,7 @@ public class UploadService extends Service {
         // Create notification and start in foreground
         final int NOTIFICATION_ID = 2;
         Notification notification = new NotificationCompat.Builder(getApplicationContext(), getString(R.string.upload_channel_id))
-                .setSmallIcon(R.mipmap.ic_launcher) // notification icon
+                .setSmallIcon(R.drawable.small_icon) // notification icon
                 .setContentTitle(getString(R.string.app_name)) // title for notification
                 .setContentText(getString(R.string.upload_notification_text))// message for notification
                 .setAutoCancel(true).build(); // clear notification after click

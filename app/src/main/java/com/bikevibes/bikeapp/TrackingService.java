@@ -111,7 +111,7 @@ public class TrackingService extends Service implements SensorEventListener, Loc
 
         final int NOTIFICATION_ID = 1;
         Notification notification = new NotificationCompat.Builder(getApplicationContext(), getString(R.string.tracking_channel_id))
-                .setSmallIcon(R.mipmap.ic_launcher) // notification icon
+                .setSmallIcon(R.drawable.small_icon) // notification icon
                 .setContentTitle(getString(R.string.app_name)) // title for notification
                 .setContentText(getString(R.string.tracking_notification_text))// message for notification
                 .setAutoCancel(true).build(); // clear notification after click

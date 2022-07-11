@@ -1,6 +1,6 @@
 <resources>
     <!-- UI Strings-->
-    <string name="app_name">BikeApp</string>
+    <string name="app_name">BikeVibes</string>
     <string name="unknown_text">Unknown</string>
     <string name="tracking_text">Tracking</string>
     <string name="upload_text">Upload</string>
@@ -22,8 +22,6 @@
     <string name="preference_file_key">com.bikevibes.bikeapp.TRACKING_INFO</string>
     <string name="prefs_user_key">user_id</string>
     <string name="prefs_trip_key">trip_id</string>
-    <string name="prefs_time_key">timestamp</string>
-    <string name="prefs_loc_time_key">loc_time</string>
 
     <!-- Intent Extras Keys -->
     <string name="success_key">success</string>
@@ -76,8 +74,6 @@
     <string name="delete_local_key">delete_local_pref</string>
 
     <string name="email_key">email_pref</string>
-
-    <string name="clipboard_text">Copied to Clipboard</string>
 
     <string name="no_email_client">No email client found</string>
     <string name="no_alias">Click to set an alias. This can be used to identify your data.</string>
