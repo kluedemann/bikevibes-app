@@ -4,8 +4,9 @@
     <PreferenceCategory app:title="Privacy">
 
         <Preference
-            app:summary="@string/data_policy_text"
-            app:title="@string/data_policy_title" />
+            app:summary="@string/privacy_policy_text"
+            app:title="@string/privacy_policy_title"
+            app:key="@string/privacy_policy_key"/>
 
         <SeekBarPreference
             android:max="500"
@@ -39,6 +40,11 @@
     <PreferenceCategory app:title="Contact">
 
         <Preference
+            app:key="@string/website_pref_key"
+            app:summary="@string/website_pref_text"
+            app:title="@string/website_pref_title"/>
+
+        <Preference
             app:key="@string/email_key"
             app:summary="@string/email_address"
             app:title="Email Us" />
@@ -53,6 +59,10 @@
             app:key="@string/tforest_key"
             app:summary="@string/tforest_text"
             app:title="@string/tforest_title" />
+        <Preference
+            app:key="@string/osm_key"
+            app:summary="@string/osm_text"
+            app:title="@string/osm_title" />
         <Preference
             app:key="@string/nserc_key"
             app:summary="@string/nserc_text"

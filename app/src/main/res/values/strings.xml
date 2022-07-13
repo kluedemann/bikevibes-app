@@ -69,6 +69,11 @@
     <string name="tforest_title">Thunderforest</string>
     <string name="tforest_text">Map tile provider</string>
 
+    <string name="osm_key">osm_pref</string>
+    <string name="osm_url">https://www.openstreetmap.org/copyright</string>
+    <string name="osm_title">OpenStreetMap contributors</string>
+    <string name="osm_text">Map data licensed under the ODbL</string>
+
     <string name="deleted_text">Data Deleted!</string>
     <string name="confirmation_text">Click again to confirm</string>
     <string name="delete_local_key">delete_local_pref</string>
@@ -80,6 +85,14 @@
 
     <string name="alias_pref_key">alias_pref</string>
 
-    <string name="data_policy_title">Data Policy</string>
-    <string name="data_policy_text">We keep no identifying information on our server other than your anonymous user ID. You may request that your data be deleted from the server at any time.</string>
+    <string name="privacy_policy_title">Privacy Policy</string>
+    <string name="privacy_policy_text"></string>
+    <string name="privacy_policy_url">https://www.bikevibes.ca/privacy-policy</string>
+    <string name="privacy_policy_key">privacy_policy_pref</string>
+
+    <string name="website_pref_key">website_pref</string>
+    <string name="website_pref_text">bikevibes.ca</string>
+    <string name="website_pref_title">Visit Our Website</string>
+    <string name="website_pref_url">https://www.bikevibes.ca</string>
+
 </resources>

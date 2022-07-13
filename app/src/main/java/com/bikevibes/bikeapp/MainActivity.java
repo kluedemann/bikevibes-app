@@ -17,6 +17,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
@@ -30,9 +31,11 @@ import android.widget.Toast;
 import com.bikevibes.bikeapp.db.TripSummary;
 
 import org.osmdroid.config.Configuration;
+import org.osmdroid.library.BuildConfig;
 import org.osmdroid.tileprovider.tilesource.ThunderforestTileSource;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
+import org.osmdroid.views.overlay.CopyrightOverlay;
 import org.osmdroid.views.overlay.Polyline;
 
 import java.text.DateFormat;
@@ -113,6 +116,10 @@ public class MainActivity extends AppCompatActivity {
         Configuration.getInstance().setUserAgentValue(BuildConfig.APPLICATION_ID);
         map = findViewById(R.id.mapView);
         map.setTileSource(new ThunderforestTileSource(ctx, ThunderforestTileSource.NEIGHBOURHOOD));
+        CopyrightOverlay overlay = new CopyrightOverlay(ctx);
+        overlay.setAlignRight(true);
+        overlay.setTextColor(getResources().getColor(android.R.color.tab_indicator_text));
+        map.getOverlays().add(overlay);
         map.setMultiTouchControls(true);
         map.setTilesScaledToDpi(true);
         setMapZoom(10.0);

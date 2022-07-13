@@ -125,6 +125,24 @@ public class SettingsActivity extends AppCompatActivity {
                     });
                 }
 
+                // Link to Privacy Policy
+                Preference privacyPref = findPreference(getString(R.string.privacy_policy_key));
+                if (privacyPref != null) {
+                    privacyPref.setOnPreferenceClickListener(preference -> {
+                        openURL(getString(R.string.privacy_policy_url));
+                        return true;
+                    });
+                }
+
+                // Link to Website
+                Preference websitePref = findPreference(getString(R.string.website_pref_key));
+                if (websitePref != null) {
+                    websitePref.setOnPreferenceClickListener(preference -> {
+                        openURL(getString(R.string.website_pref_url));
+                        return true;
+                    });
+                }
+
                 // Link to Cybera website
                 Preference cyberaPref = findPreference(getString(R.string.cybera_key));
                 if (cyberaPref != null) {
@@ -139,6 +157,15 @@ public class SettingsActivity extends AppCompatActivity {
                 if (tforestPref != null) {
                     tforestPref.setOnPreferenceClickListener(preference -> {
                         openURL(getString(R.string.tforest_url));
+                        return true;
+                    });
+                }
+
+                // Link to OSM website
+                Preference osmPref = findPreference(getString(R.string.osm_key));
+                if (osmPref != null) {
+                    osmPref.setOnPreferenceClickListener(preference -> {
+                        openURL(getString(R.string.osm_url));
                         return true;
                     });
                 }
