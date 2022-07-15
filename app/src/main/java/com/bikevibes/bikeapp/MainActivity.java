@@ -131,7 +131,7 @@ public class MainActivity extends AppCompatActivity {
         viewModel.getTrips().observe(this, viewModel::setTrips);
 
         // Request location permissions
-        String[] permissions = {Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.WRITE_EXTERNAL_STORAGE};
+        String[] permissions = {Manifest.permission.ACCESS_FINE_LOCATION};
         requestPermissions(permissions);
 
         // Handle Tracking switch
@@ -304,7 +304,7 @@ public class MainActivity extends AppCompatActivity {
      * @return - true if the menu is displayed, false otherwise
      */
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
+    public boolean onCreateOptionsMenu(@NonNull Menu menu) {
         getMenuInflater().inflate(R.menu.main_menu, menu);
         return true;
     }

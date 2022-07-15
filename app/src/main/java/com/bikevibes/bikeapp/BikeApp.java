@@ -4,11 +4,16 @@ import android.app.Application;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
+import android.util.Log;
 
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.Volley;
 import com.bikevibes.bikeapp.db.AppDatabase;
 
+import org.osmdroid.config.Configuration;
+import org.osmdroid.config.IConfigurationProvider;
+
+import java.io.File;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -27,6 +32,13 @@ public class BikeApp extends Application {
     public void onCreate() {
         super.onCreate();
         createNotificationChannels();
+
+        // Configure OSMdroid to use the cache folder rather than external storage
+        IConfigurationProvider config = Configuration.getInstance();
+        File basePath = new File(getCacheDir().getAbsolutePath(), "osmdroid");
+        config.setOsmdroidBasePath(basePath);
+        File tileCache = new File(config.getOsmdroidBasePath().getAbsolutePath(), "tile");
+        config.setOsmdroidTileCache(tileCache);
     }
 
     public ExecutorService getExecutors() {

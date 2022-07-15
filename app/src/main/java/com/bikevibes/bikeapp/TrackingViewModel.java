@@ -84,13 +84,13 @@ public class TrackingViewModel extends AndroidViewModel {
      */
     public List<Polyline> getLines(@NonNull List<Segment> segments) {
         // Get the maximum RMS z acceleration over a segment
-        double max = 0;
-        for (int i = 0; i < segments.size(); i++) {
-            double value = segments.get(i).getRmsZAccel();
-            if (value > max) {
-                max = value;
-            }
-        }
+        double max = 3.0;
+//        for (int i = 0; i < segments.size(); i++) {
+//            double value = segments.get(i).getRmsZAccel();
+//            if (value > max) {
+//                max = value;
+//            }
+//        }
 
         // Convert the segments into Polylines
         List<Polyline> lines = new ArrayList<>();
