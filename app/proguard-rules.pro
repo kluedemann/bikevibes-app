@@ -20,9 +20,9 @@
 # hide the original source file name.
 -renamesourcefileattribute SourceFile
 
--dontskipnonpubliclibraryclasses
+#-dontskipnonpubliclibraryclasses
 -dontobfuscate
--forceprocessing
+#-forceprocessing
 -optimizationpasses 5
 
 -keep class * extends android.app.Activity

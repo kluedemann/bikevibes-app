@@ -87,10 +87,6 @@ public class LocationData extends DataInstance {
 
     // ******************************** Getter Methods ********************************************
 
-    public long getTime() {
-        return timestamp.getTime();
-    }
-
     @NonNull
     public Date getTimestamp() {
         return timestamp;

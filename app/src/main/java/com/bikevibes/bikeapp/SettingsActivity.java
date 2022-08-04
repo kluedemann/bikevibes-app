@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -187,7 +186,14 @@ public class SettingsActivity extends AppCompatActivity {
          */
         private void openURL(String url) {
             Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-            startActivity(browserIntent);
+            try {
+                startActivity(browserIntent);
+            } catch (ActivityNotFoundException e) {
+                Activity activity = getActivity();
+                if (activity != null) {
+                    Toast.makeText(activity.getApplicationContext(), "Error: Could not open link", Toast.LENGTH_SHORT).show();
+                }
+            }
         }
 
         /**
@@ -234,7 +240,7 @@ public class SettingsActivity extends AppCompatActivity {
                 requestCompleted(isSuccess, alias);
             }, error -> {
                 // onErrorResponse: Called upon receiving an error response
-                Log.e(TAG, error.toString());
+                //Log.e(TAG, error.toString());
                 Activity activity = getActivity();
                 if (activity != null) {
                     Context ctx = activity.getApplicationContext();

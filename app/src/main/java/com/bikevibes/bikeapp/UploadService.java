@@ -199,7 +199,7 @@ public class UploadService extends Service {
             requestCompleted(isSuccess);
         }, error -> {
             // onErrorResponse: Called upon receiving an error response
-            Log.e(TAG, error.toString());
+            //Log.e(TAG, error.toString());
             if (error instanceof TimeoutError) {
                 // Sever could not be reached
                 queue.cancelAll(TAG);

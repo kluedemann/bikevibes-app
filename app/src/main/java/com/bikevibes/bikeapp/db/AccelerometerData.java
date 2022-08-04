@@ -67,10 +67,8 @@ public class AccelerometerData extends DataInstance {
         myDao.insertAccel(this);
     }
 
+    @NonNull
     public Date getTimestamp() {return timestamp;}
-    public long getTime() {
-        return timestamp.getTime();
-    }
 
     public float getX() {
         return x;
@@ -88,7 +86,7 @@ public class AccelerometerData extends DataInstance {
         return tripID;
     }
 
-    public void setTimestamp(Date timestamp) {
+    public void setTimestamp(@NonNull Date timestamp) {
         this.timestamp = timestamp;
     }
 
