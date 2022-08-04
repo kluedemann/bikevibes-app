@@ -1,12 +1,12 @@
 {
   "formatVersion": 1,
   "database": {
-    "version": 1,
-    "identityHash": "b99fa57e5d363be05f589476d88c6c3d",
+    "version": 2,
+    "identityHash": "2f0748c38b7eb1b00b992e3f738ac3ed",
     "entities": [
       {
         "tableName": "AccelerometerData",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`timestamp` INTEGER NOT NULL, `x` REAL NOT NULL, `y` REAL NOT NULL, `z` REAL NOT NULL, `tripID` INTEGER NOT NULL, PRIMARY KEY(`timestamp`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`timestamp` INTEGER NOT NULL, `x` REAL, `y` REAL, `z` REAL, `tripID` INTEGER NOT NULL, PRIMARY KEY(`timestamp`))",
         "fields": [
           {
             "fieldPath": "timestamp",
@@ -18,19 +18,19 @@
             "fieldPath": "x",
             "columnName": "x",
             "affinity": "REAL",
-            "notNull": true
+            "notNull": false
           },
           {
             "fieldPath": "y",
             "columnName": "y",
             "affinity": "REAL",
-            "notNull": true
+            "notNull": false
           },
           {
             "fieldPath": "z",
             "columnName": "z",
             "affinity": "REAL",
-            "notNull": true
+            "notNull": false
           },
           {
             "fieldPath": "tripID",
@@ -50,7 +50,7 @@
       },
       {
         "tableName": "LocationData",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`timestamp` INTEGER NOT NULL, `latitude` REAL NOT NULL, `longitude` REAL NOT NULL, `tripID` INTEGER NOT NULL, PRIMARY KEY(`timestamp`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`timestamp` INTEGER NOT NULL, `latitude` REAL, `longitude` REAL, `tripID` INTEGER NOT NULL, PRIMARY KEY(`timestamp`))",
         "fields": [
           {
             "fieldPath": "timestamp",
@@ -62,13 +62,13 @@
             "fieldPath": "latitude",
             "columnName": "latitude",
             "affinity": "REAL",
-            "notNull": true
+            "notNull": false
           },
           {
             "fieldPath": "longitude",
             "columnName": "longitude",
             "affinity": "REAL",
-            "notNull": true
+            "notNull": false
           },
           {
             "fieldPath": "tripID",
@@ -88,7 +88,7 @@
       },
       {
         "tableName": "Segment",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`tripID` INTEGER NOT NULL, `ts1` INTEGER NOT NULL, `lat1` REAL NOT NULL, `lon1` REAL NOT NULL, `ts2` INTEGER NOT NULL, `lat2` REAL NOT NULL, `lon2` REAL NOT NULL, `rmsZAccel` REAL NOT NULL, `maxZAccel` REAL NOT NULL, PRIMARY KEY(`tripID`, `ts1`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`tripID` INTEGER NOT NULL, `ts1` INTEGER NOT NULL, `lat1` REAL, `lon1` REAL, `ts2` INTEGER NOT NULL, `lat2` REAL, `lon2` REAL, `rmsZAccel` REAL, `maxZAccel` REAL, PRIMARY KEY(`tripID`, `ts1`))",
         "fields": [
           {
             "fieldPath": "tripID",
@@ -106,13 +106,13 @@
             "fieldPath": "lat1",
             "columnName": "lat1",
             "affinity": "REAL",
-            "notNull": true
+            "notNull": false
           },
           {
             "fieldPath": "lon1",
             "columnName": "lon1",
             "affinity": "REAL",
-            "notNull": true
+            "notNull": false
           },
           {
             "fieldPath": "ts2",
@@ -124,25 +124,25 @@
             "fieldPath": "lat2",
             "columnName": "lat2",
             "affinity": "REAL",
-            "notNull": true
+            "notNull": false
           },
           {
             "fieldPath": "lon2",
             "columnName": "lon2",
             "affinity": "REAL",
-            "notNull": true
+            "notNull": false
           },
           {
             "fieldPath": "rmsZAccel",
             "columnName": "rmsZAccel",
             "affinity": "REAL",
-            "notNull": true
+            "notNull": false
           },
           {
             "fieldPath": "maxZAccel",
             "columnName": "maxZAccel",
             "affinity": "REAL",
-            "notNull": true
+            "notNull": false
           }
         ],
         "primaryKey": {
@@ -159,7 +159,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'b99fa57e5d363be05f589476d88c6c3d')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '2f0748c38b7eb1b00b992e3f738ac3ed')"
     ]
   }
 }

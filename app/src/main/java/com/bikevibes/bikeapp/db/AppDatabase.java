@@ -2,6 +2,7 @@ package com.bikevibes.bikeapp.db;
 
 import android.content.Context;
 
+import androidx.room.AutoMigration;
 import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
@@ -15,7 +16,13 @@ import java.util.concurrent.Executors;
  * Builds the database and offers access to its thread pool and Data Access Object.
  * The database instance follows a singleton pattern.
  */
-@Database(entities = {AccelerometerData.class, LocationData.class, Segment.class}, version = 1)
+@Database(
+        entities = {AccelerometerData.class, LocationData.class, Segment.class},
+        version = 2,
+        autoMigrations = {
+                @AutoMigration(from = 1, to = 2)
+        }
+)
 @TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
 

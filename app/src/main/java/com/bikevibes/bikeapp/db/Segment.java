@@ -16,18 +16,18 @@ public class Segment {
 
     @NonNull
     private Date ts1;
-    private double lat1;
-    private double lon1;
+    private Double lat1;
+    private Double lon1;
 
     @NonNull
     private Date ts2;
-    private double lat2;
-    private double lon2;
+    private Double lat2;
+    private Double lon2;
 
-    private double rmsZAccel;
-    private double maxZAccel;
+    private Double rmsZAccel;
+    private Double maxZAccel;
 
-    public Segment(int tripID, @NonNull LocationData loc1, @NonNull LocationData loc2, double rms, double max) {
+    public Segment(int tripID, @NonNull LocationData loc1, @NonNull LocationData loc2, Double rms, Double max) {
         this.tripID = tripID;
         this.ts1 = loc1.getTimestamp();
         this.lat1 = loc1.getLatitude();
@@ -39,7 +39,7 @@ public class Segment {
         this.maxZAccel = max;
     }
 
-    public Segment(int tripID, @NonNull Date ts1, double lat1, double lon1, @NonNull Date ts2, double lat2, double lon2, double rmsZAccel, double maxZAccel) {
+    public Segment(int tripID, @NonNull Date ts1, Double lat1, Double lon1, @NonNull Date ts2, Double lat2, Double lon2, Double rmsZAccel, Double maxZAccel) {
         this.tripID = tripID;
         this.ts1 = ts1;
         this.lat1 = lat1;
@@ -51,23 +51,23 @@ public class Segment {
         this.maxZAccel = maxZAccel;
     }
 
-    public double getLat1() {
+    public Double getLat1() {
         return lat1;
     }
 
-    public double getLon1() {
+    public Double getLon1() {
         return lon1;
     }
 
-    public double getLat2() {
+    public Double getLat2() {
         return lat2;
     }
 
-    public double getLon2() {
+    public Double getLon2() {
         return lon2;
     }
 
-    public double getRmsZAccel() {
+    public Double getRmsZAccel() {
         return rmsZAccel;
     }
 
@@ -85,7 +85,7 @@ public class Segment {
         return ts2;
     }
 
-    public double getMaxZAccel() {
+    public Double getMaxZAccel() {
         return maxZAccel;
     }
 
@@ -110,23 +110,23 @@ public class Segment {
         this.tripID = tripID;
     }
 
-    public void setLat1(double lat1) {
+    public void setLat1(Double lat1) {
         this.lat1 = lat1;
     }
 
-    public void setLon1(double lon1) {
+    public void setLon1(Double lon1) {
         this.lon1 = lon1;
     }
 
-    public void setLat2(double lat2) {
+    public void setLat2(Double lat2) {
         this.lat2 = lat2;
     }
 
-    public void setLon2(double lon2) {
+    public void setLon2(Double lon2) {
         this.lon2 = lon2;
     }
 
-    public void setRmsZAccel(double rmsZAccel) {
+    public void setRmsZAccel(Double rmsZAccel) {
         this.rmsZAccel = rmsZAccel;
     }
 
@@ -138,7 +138,7 @@ public class Segment {
         this.ts2 = ts2;
     }
 
-    public void setMaxZAccel(double maxZAccel) {
+    public void setMaxZAccel(Double maxZAccel) {
         this.maxZAccel = maxZAccel;
     }
 }

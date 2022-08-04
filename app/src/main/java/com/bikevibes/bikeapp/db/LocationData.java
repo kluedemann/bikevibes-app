@@ -21,11 +21,11 @@ public class LocationData extends DataInstance {
     @PrimaryKey
     @NonNull
     private Date timestamp;
-    private double latitude;
-    private double longitude;
+    private Double latitude;
+    private Double longitude;
     private int tripID;
 
-    public LocationData(@NonNull Date timestamp, double latitude, double longitude, int tripID) {
+    public LocationData(@NonNull Date timestamp, Double latitude, Double longitude, int tripID) {
         this.timestamp = timestamp;
         this.latitude = latitude;
         this.longitude = longitude;
@@ -92,11 +92,11 @@ public class LocationData extends DataInstance {
         return timestamp;
     }
 
-    public double getLatitude() {
+    public Double getLatitude() {
         return latitude;
     }
 
-    public double getLongitude() {
+    public Double getLongitude() {
         return longitude;
     }
 
@@ -108,11 +108,11 @@ public class LocationData extends DataInstance {
         this.timestamp = timestamp;
     }
 
-    public void setLatitude(double latitude) {
+    public void setLatitude(Double latitude) {
         this.latitude = latitude;
     }
 
-    public void setLongitude(double longitude) {
+    public void setLongitude(Double longitude) {
         this.longitude = longitude;
     }
 

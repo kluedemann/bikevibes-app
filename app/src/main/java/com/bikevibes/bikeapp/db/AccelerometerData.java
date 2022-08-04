@@ -18,12 +18,12 @@ public class AccelerometerData extends DataInstance {
     @PrimaryKey
     @NonNull
     private Date timestamp;
-    private float x;
-    private float y;
-    private float z;
+    private Float x;
+    private Float y;
+    private Float z;
     private int tripID;
 
-    public AccelerometerData(@NonNull Date timestamp, float x, float y, float z, int tripID) {
+    public AccelerometerData(@NonNull Date timestamp, Float x, Float y, Float z, int tripID) {
         this.timestamp = timestamp;
         this.x = x;
         this.y = y;
@@ -70,15 +70,15 @@ public class AccelerometerData extends DataInstance {
     @NonNull
     public Date getTimestamp() {return timestamp;}
 
-    public float getX() {
+    public Float getX() {
         return x;
     }
 
-    public float getY() {
+    public Float getY() {
         return y;
     }
 
-    public float getZ() {
+    public Float getZ() {
         return z;
     }
 
@@ -90,15 +90,15 @@ public class AccelerometerData extends DataInstance {
         this.timestamp = timestamp;
     }
 
-    public void setX(float x) {
+    public void setX(Float x) {
         this.x = x;
     }
 
-    public void setY(float y) {
+    public void setY(Float y) {
         this.y = y;
     }
 
-    public void setZ(float z) {
+    public void setZ(Float z) {
         this.z = z;
     }
 
