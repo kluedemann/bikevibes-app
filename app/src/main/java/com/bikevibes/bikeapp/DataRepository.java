@@ -13,6 +13,7 @@ import com.bikevibes.bikeapp.db.LocationData;
 import com.bikevibes.bikeapp.db.Segment;
 import com.bikevibes.bikeapp.db.TrackingDao;
 import com.bikevibes.bikeapp.db.TripSummary;
+import com.bikevibes.bikeapp.db.TripSurface;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -84,6 +85,8 @@ public class DataRepository {
     List<LocationData> getLocs(int maxTrip) {
         return myDao.getLocList(maxTrip);
     }
+
+    List<TripSurface> getSurfaces(int maxTrip) {return myDao.getSurfaceList(maxTrip);}
 
 
     // ************************* LiveData Getter Methods ************************************
@@ -188,6 +191,7 @@ public class DataRepository {
             myDao.deleteAllAccel();
             myDao.deleteAllLoc();
             myDao.deleteAllSegments();
+            myDao.deleteAllSurfaces();
             trip.postValue(null);
         });
     }
@@ -239,6 +243,8 @@ public class DataRepository {
                 myDao.deleteLocation((LocationData) data);
             } else if (data instanceof AccelerometerData) {
                 myDao.deleteAccel((AccelerometerData) data);
+            } else if (data instanceof TripSurface) {
+                myDao.deleteSurface((TripSurface) data);
             }
         });
     }
@@ -304,5 +310,9 @@ public class DataRepository {
         myDao.delLocLt(tripID, minTS);
         myDao.delAccGt(tripID, maxTS);
         myDao.delLocGt(tripID, maxTS);
+    }
+
+    public void insertTrip(TripSurface trip) {
+        AppDatabase.getExecutor().execute(() -> myDao.insertTrip(trip));
     }
 }

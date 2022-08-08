@@ -100,4 +100,16 @@ public interface TrackingDao {
 
     @Query("DELETE FROM segment")
     void deleteAllSegments();
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void insertTrip(TripSurface trip);
+
+    @Delete
+    void deleteSurface(TripSurface trip);
+
+    @Query("SELECT * FROM tripsurface WHERE tripID <= :maxTrip")
+    List<TripSurface> getSurfaceList(int maxTrip);
+
+    @Query("DELETE FROM TripSurface")
+    void deleteAllSurfaces();
 }

@@ -9,6 +9,7 @@ import androidx.lifecycle.LiveData;
 
 import com.bikevibes.bikeapp.db.Segment;
 import com.bikevibes.bikeapp.db.TripSummary;
+import com.bikevibes.bikeapp.db.TripSurface;
 
 import org.osmdroid.views.overlay.Polyline;
 
@@ -130,5 +131,9 @@ public class TrackingViewModel extends AndroidViewModel {
             tripIndex = trips.size() - 1;
             update();
         }
+    }
+
+    void setSurface(int tripID, String surface) {
+        mRepository.insertTrip(new TripSurface(tripID, surface));
     }
 }

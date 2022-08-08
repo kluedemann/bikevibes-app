@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <array name="surfaces">
+        <item>@string/pavement</item>
+        <item>@string/dirt</item>
+        <item>@string/gravel</item>
+    </array>
+
+</resources>

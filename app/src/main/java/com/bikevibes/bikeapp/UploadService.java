@@ -21,6 +21,7 @@ import com.android.volley.toolbox.JsonObjectRequest;
 import com.bikevibes.bikeapp.db.AccelerometerData;
 import com.bikevibes.bikeapp.db.DataInstance;
 import com.bikevibes.bikeapp.db.LocationData;
+import com.bikevibes.bikeapp.db.TripSurface;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -157,9 +158,10 @@ public class UploadService extends Service {
 
         List<LocationData> locations = repository.getLocs(tripID);
         List<AccelerometerData> accel_readings = repository.getAccels(tripID);
+        List<TripSurface> surfaces = repository.getSurfaces(tripID);
 
         // Initialize counters
-        numToUpload = locations.size() + accel_readings.size();
+        numToUpload = locations.size() + accel_readings.size() + surfaces.size();
         numResponses = 0;
         numUploaded = 0;
 
@@ -180,19 +182,24 @@ public class UploadService extends Service {
                 .setAutoCancel(true).build(); // clear notification after click
         startForeground(NOTIFICATION_ID, notification);
 
+        // Upload surface data
+        for (int i = 0; i < surfaces.size(); i++) {
+            upload(surfaces.get(i), userID);
+        }
+
         // Upload location data
         for (int i = 0; i < locations.size(); i++) {
             LocationData loc = locations.get(i);
             upload(loc, userID);
-            //Log.d(TAG, String.format("LOCATION: %f, %f, %d", loc.latitude, loc.longitude, loc.timestamp));
         }
 
         // Upload accelerometer data
         for (int i = 0; i < accel_readings.size(); i++) {
             AccelerometerData acc = accel_readings.get(i);
             upload(acc, userID);
-            //Log.d(TAG, String.format("ACCEL: %f, %f, %f, %d", acc.x, acc.y, acc.z, acc.timestamp));
         }
+
+
 
         //writePrefs();
     }

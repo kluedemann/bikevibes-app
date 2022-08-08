@@ -17,10 +17,11 @@ import java.util.concurrent.Executors;
  * The database instance follows a singleton pattern.
  */
 @Database(
-        entities = {AccelerometerData.class, LocationData.class, Segment.class},
-        version = 2,
+        entities = {AccelerometerData.class, LocationData.class, Segment.class, TripSurface.class},
+        version = 3,
         autoMigrations = {
-                @AutoMigration(from = 1, to = 2)
+                @AutoMigration(from = 1, to = 2),
+                @AutoMigration(from = 2, to = 3)
         }
 )
 @TypeConverters({Converters.class})

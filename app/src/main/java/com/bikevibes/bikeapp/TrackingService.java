@@ -300,4 +300,8 @@ public class TrackingService extends Service implements SensorEventListener, Loc
     boolean getTracking() {
         return isTracking;
     }
+
+    int getTripID() {
+        return tripID;
+    }
 }

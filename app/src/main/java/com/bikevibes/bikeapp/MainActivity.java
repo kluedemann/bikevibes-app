@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.fragment.app.DialogFragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
@@ -46,7 +47,7 @@ import java.util.Locale;
  * Holds the UI elements for the app. Created on app startup.
  * Binds to and starts Services and launches other fragments/activities if needed.
  */
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements SurfaceDialogFragment.SurfaceDialogListener {
     private final TextView[] dataViews = new TextView[6];
     private Button uploadButton;
     private TrackingService trackingService;
@@ -283,6 +284,8 @@ public class MainActivity extends AppCompatActivity {
                 getApplicationContext().startService(intent);
             } else if (!isActive && trackingService.getTracking()) {
                 trackingService.disableTracking();
+                DialogFragment fragment = new SurfaceDialogFragment();
+                fragment.show(getSupportFragmentManager(), "surface");
             }
         });
     }
@@ -435,5 +438,10 @@ public class MainActivity extends AppCompatActivity {
         for (int i = 0; i < lines.size(); i++) {
             map.getOverlayManager().add(lines.get(i));
         }
+    }
+
+    @Override
+    public void onSelect(DialogFragment dialog, String surface) {
+        viewModel.setSurface(trackingService.getTripID(), surface);
     }
 }

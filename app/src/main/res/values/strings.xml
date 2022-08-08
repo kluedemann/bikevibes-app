@@ -118,4 +118,10 @@
     <string name="acknowledgements_title">Acknowledgements</string>
     <string name="privacy_title">Privacy</string>
 
+    <!-- Surfaces -->
+    <string name="pavement">Pavement</string>
+    <string name="dirt">Dirt</string>
+    <string name="gravel">Gravel</string>
+    <string name="surface_dialog_title">Pick the primary surface</string>
+
 </resources>
