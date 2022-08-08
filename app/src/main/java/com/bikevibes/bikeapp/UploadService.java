@@ -11,6 +11,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.preference.PreferenceManager;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -21,6 +22,8 @@ import com.bikevibes.bikeapp.db.AccelerometerData;
 import com.bikevibes.bikeapp.db.DataInstance;
 import com.bikevibes.bikeapp.db.LocationData;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -82,10 +85,35 @@ public class UploadService extends Service {
         super.onStartCommand(intent, flags, startID);
         Log.d(TAG, "Started!");
         if (!isUploading) {
+            uploadExecutor.execute(this::uploadUser);
             uploadExecutor.execute(this::uploadData);
             isUploading = true;
         }
         return START_NOT_STICKY;
+    }
+
+    private void uploadUser() {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        String alias = prefs.getString(getString(R.string.alias_pref_key), null);
+
+        String url = String.format("http://162.246.157.171:8080/upload/alias?user_id=%s", userID);
+        if (alias != null) {
+            try {
+                alias = URLEncoder.encode(alias, "utf-8");
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
+            url += String.format("&alias=%s", alias);
+        }
+
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, null, response -> {
+            // onResponse: Called upon receiving a response from the server
+        }, error -> {
+            // onErrorResponse: Called upon receiving an error response
+            Log.e(TAG, error.toString());
+        });
+        request.setTag(TAG);
+        queue.add(request);
     }
 
     /**
@@ -117,15 +145,7 @@ public class UploadService extends Service {
             editor.putString(USER_KEY, userID);
             editor.apply();
 
-            final String url = String.format("http://162.246.157.171:8080/upload/alias?user_id=%s", userID);
-            JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, null, response -> {
-                // onResponse: Called upon receiving a response from the server
-            }, error -> {
-                // onErrorResponse: Called upon receiving an error response
-                Log.e(TAG, error.toString());
-            });
-            request.setTag(TAG);
-            queue.add(request);
+
         }
     }
 

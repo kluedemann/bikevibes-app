@@ -31,13 +31,7 @@ public class BikeApp extends Application {
     public void onCreate() {
         super.onCreate();
         createNotificationChannels();
-
-        // Configure OSMdroid to use the cache folder rather than external storage
-        IConfigurationProvider config = Configuration.getInstance();
-        File basePath = new File(getCacheDir().getAbsolutePath(), "osmdroid");
-        config.setOsmdroidBasePath(basePath);
-        File tileCache = new File(config.getOsmdroidBasePath().getAbsolutePath(), "tile");
-        config.setOsmdroidTileCache(tileCache);
+        setOsmdroidPath();
     }
 
     public ExecutorService getExecutors() {
@@ -75,7 +69,6 @@ public class BikeApp extends Application {
         NotificationManager notificationManager =
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            // Create upload notification channel if needed
             // Create tracking notification channel
             NotificationChannel channel = new NotificationChannel(getString(R.string.tracking_channel_id),
                     getString(R.string.tracking_channel_name),
@@ -83,13 +76,25 @@ public class BikeApp extends Application {
             channel.setDescription(getString(R.string.tracking_channel_desc));
             notificationManager.createNotificationChannel(channel);
 
+            // Create upload notification channel
             channel = new NotificationChannel(getString(R.string.upload_channel_id),
                     getString(R.string.upload_channel_name),
                     NotificationManager.IMPORTANCE_DEFAULT);
             channel.setDescription(getString(R.string.upload_channel_desc));
             notificationManager.createNotificationChannel(channel);
-
-
         }
+    }
+
+    /**
+     * Configure OSMdroid to save tiles in internal storage.
+     * Sets both the base and tile cache paths to the app's cache directory.
+     */
+    private void setOsmdroidPath() {
+        // Configure OSMdroid to use the cache folder rather than external storage
+        IConfigurationProvider config = Configuration.getInstance();
+        File basePath = new File(getCacheDir().getAbsolutePath(), "osmdroid");
+        config.setOsmdroidBasePath(basePath);
+        File tileCache = new File(config.getOsmdroidBasePath().getAbsolutePath(), "tile");
+        config.setOsmdroidTileCache(tileCache);
     }
 }

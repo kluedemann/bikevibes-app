@@ -1,43 +1,45 @@
 <PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <PreferenceCategory app:title="Privacy">
+    <PreferenceCategory app:title="@string/privacy_title">
 
         <Preference
-            app:summary="@string/privacy_policy_text"
             app:title="@string/privacy_policy_title"
             app:key="@string/privacy_policy_key"/>
 
         <SeekBarPreference
             android:max="500"
             app:defaultValue="50"
-            app:key="privacy_radius"
+            app:key="@string/radius_pref_key"
             app:seekBarIncrement="10"
             app:showSeekBarValue="true"
-            app:summary="Distance in meters around the start and end of a trip in which data is not tracked"
-            app:title="Blackout Radius" />
+            app:summary="@string/radius_pref_summary"
+            app:title="@string/radius_pref_title" />
 
         <EditTextPreference
             app:key="@string/alias_pref_key"
-            app:title="Alias" />
+            app:title="@string/alias_pref_title"
+            android:dialogTitle="@string/alias_dialog_title"
+            android:hint="@string/alias_pref_hint"
+            />
 
         <Preference
-            app:summary="Please email us with your user id so we can delete it for you"
-            app:title="Delete My Data" />
+            app:key="@string/delete_remote_key"
+            app:title="@string/delete_remote_title" />
 
 
 
     </PreferenceCategory>
 
-    <PreferenceCategory app:title="Storage">
+    <PreferenceCategory app:title="@string/storage_title">
         <Preference
             app:key="@string/delete_local_key"
-            app:title="Delete Local Data" />
+            app:title="@string/delete_local_title" />
 
 
     </PreferenceCategory>
 
-    <PreferenceCategory app:title="Contact">
+    <PreferenceCategory app:title="@string/contact_title">
 
         <Preference
             app:key="@string/website_pref_key"
@@ -47,10 +49,10 @@
         <Preference
             app:key="@string/email_key"
             app:summary="@string/email_address"
-            app:title="Email Us" />
+            app:title="@string/email_pref_title" />
     </PreferenceCategory>
 
-    <PreferenceCategory app:title="Acknowledgements">
+    <PreferenceCategory app:title="@string/acknowledgements_title">
         <Preference
             app:key="@string/cybera_key"
             app:summary="@string/cybera_text"

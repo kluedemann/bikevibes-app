@@ -52,8 +52,25 @@
     <string name="title_activity_settings">SettingsActivity</string>
 
     <!-- Preferences -->
-    <string name="email_address">kluedema@ualberta.ca</string>
+    <string name="email_key">email_pref</string>
+    <string name="email_address">bikevibes.app@gmail.com</string>
 
+    <string name="radius_pref_key">privacy_radius</string>
+    <string name="radius_pref_summary">Distance in meters around the start and end of a trip in which data is not tracked</string>
+    <string name="radius_pref_title">Blackout Radius</string>
+
+    <string name="delete_local_key">delete_local_pref</string>
+    <string name="delete_remote_key">delete_remote_pref</string>
+    <string name="twice_confirmation">Click twice more to confirm</string>
+    <string name="confirmation_text">Click again to confirm</string>
+
+    <string name="alias_pref_key">alias_pref</string>
+    <string name="alias_dialog_title">Enter an alias</string>
+    <string name="no_alias">Click to set an alias. This can be used to identify your data.</string>
+    <string name="alias_pref_title">Alias</string>
+    <string name="alias_pref_hint">Alias</string>
+
+    <!-- Link Preferences -->
     <string name="cybera_key">cybera_pref</string>
     <string name="cybera_url">https://www.cybera.ca</string>
     <string name="cybera_title">Cybera Rapid Access Cloud</string>
@@ -74,19 +91,7 @@
     <string name="osm_title">OpenStreetMap contributors</string>
     <string name="osm_text">Map data licensed under the ODbL</string>
 
-    <string name="deleted_text">Data Deleted!</string>
-    <string name="confirmation_text">Click again to confirm</string>
-    <string name="delete_local_key">delete_local_pref</string>
-
-    <string name="email_key">email_pref</string>
-
-    <string name="no_email_client">No email client found</string>
-    <string name="no_alias">Click to set an alias. This can be used to identify your data.</string>
-
-    <string name="alias_pref_key">alias_pref</string>
-
     <string name="privacy_policy_title">Privacy Policy</string>
-    <string name="privacy_policy_text"></string>
     <string name="privacy_policy_url">https://www.bikevibes.ca/privacy-policy</string>
     <string name="privacy_policy_key">privacy_policy_pref</string>
 
@@ -94,5 +99,23 @@
     <string name="website_pref_text">bikevibes.ca</string>
     <string name="website_pref_title">Visit Our Website</string>
     <string name="website_pref_url">https://www.bikevibes.ca</string>
+
+    <!-- Preferences Toast Messages -->
+    <string name="alias_success">Alias updated successfully</string>
+    <string name="alias_error">Error: Alias not updated</string>
+    <string name="duplicate_alias">Error: Alias already exists</string>
+    <string name="delete_error">Error: Data not deleted</string>
+    <string name="link_error">Error: Could not open link</string>
+    <string name="deleted_text">Data Deleted!</string>
+    <string name="no_email_client">No email client found</string>
+
+    <!-- Preferences Categories -->
+    <string name="delete_remote_title">Delete Remote Data</string>
+    <string name="storage_title">Storage</string>
+    <string name="delete_local_title">Delete Local Data</string>
+    <string name="contact_title">Contact</string>
+    <string name="email_pref_title">Email Us</string>
+    <string name="acknowledgements_title">Acknowledgements</string>
+    <string name="privacy_title">Privacy</string>
 
 </resources>

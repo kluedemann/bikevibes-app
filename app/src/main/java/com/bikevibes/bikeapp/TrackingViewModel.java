@@ -85,12 +85,6 @@ public class TrackingViewModel extends AndroidViewModel {
     public List<Polyline> getLines(@NonNull List<Segment> segments) {
         // Get the maximum RMS z acceleration over a segment
         double max = 3.5;
-//        for (int i = 0; i < segments.size(); i++) {
-//            double value = segments.get(i).getRmsZAccel();
-//            if (value > max) {
-//                max = value;
-//            }
-//        }
 
         // Convert the segments into Polylines
         List<Polyline> lines = new ArrayList<>();
@@ -123,7 +117,6 @@ public class TrackingViewModel extends AndroidViewModel {
         }
 
         String colorString = String.format("#%02X%02X00", red, green);
-        //Log.d("Color", colorString);
         return Color.parseColor(colorString);
     }
 
