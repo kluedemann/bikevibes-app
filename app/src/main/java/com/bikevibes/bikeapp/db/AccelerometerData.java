@@ -49,6 +49,12 @@ public class AccelerometerData extends DataInstance {
         return String.format(Locale.US, URL_TEMPLATE, user_id, timestamp.getTime(), tripID, x, y, z);
     }
 
+    @NonNull
+    @Override
+    public String toString() {
+        return String.format(Locale.getDefault(),"Timestamp: %d, Trip: %d, X: %f, Y: %f, Z: %f", timestamp.getTime(), tripID, x, y, z);
+    }
+
     /**
      * Delete this object from the database
      * @param myDao - the Data access object

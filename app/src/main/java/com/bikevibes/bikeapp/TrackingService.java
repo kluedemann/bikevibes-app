@@ -1,5 +1,7 @@
 package com.bikevibes.bikeapp;
 
+import static java.lang.Math.abs;
+
 import android.Manifest;
 import android.app.Notification;
 import android.app.Service;
@@ -48,6 +50,7 @@ public class TrackingService extends Service implements SensorEventListener, Loc
     private List<AccelerometerData> accelCache = new ArrayList<>();
     private List<LocationData> locCache = new ArrayList<>();
     private int numInserted;
+    private Date previous = null;
 
     // Binder class to return the Service
     public class LocalBinder extends Binder {
@@ -180,12 +183,19 @@ public class TrackingService extends Service implements SensorEventListener, Loc
      */
     @Override
     public void onSensorChanged(@NonNull SensorEvent event) {
+        final int cache_size = 250;
 
-        float[] linear_acceleration = event.values;
         Date date = new Date();
+        float[] linear_acceleration = event.values.clone();
 
         if (!isLinear) {
-            final float alpha = (float) 0.4;
+            float dt = 0.2f;
+            if (previous != null) {
+                dt = (date.getTime() - previous.getTime()) / 1000.0f;
+            }
+            previous = date;
+            final float t = 1.8f;
+            final float alpha = t / (t + dt);
 
             // Isolate the force of gravity with the low-pass filter.
             gravity[0] = alpha * gravity[0] + (1 - alpha) * event.values[0];
@@ -200,8 +210,8 @@ public class TrackingService extends Service implements SensorEventListener, Loc
         AccelerometerData acc = new AccelerometerData(date, linear_acceleration, tripID);
         if (isTracking) {
             accelCache.add(acc);
-            if (accelCache.size() == 150) {
-                numInserted += 150;
+            if (accelCache.size() == cache_size) {
+                numInserted += cache_size;
                 repository.insertAccelBatch(accelCache);
                 accelCache = new ArrayList<>();
             }
@@ -227,13 +237,14 @@ public class TrackingService extends Service implements SensorEventListener, Loc
      */
     @Override
     public void onLocationChanged(@NonNull Location loc) {
+        final int cache_size = 10;
         Date date = new Date();
         LocationData locData = new LocationData(date, loc.getLatitude(), loc.getLongitude(), tripID);
         if (isTracking) {
             //Log.d(TAG, locData.toString());
             locCache.add(locData);
-            if (locCache.size() == 6) {
-                numInserted += 6;
+            if (locCache.size() == cache_size) {
+                numInserted += cache_size;
                 repository.insertLocBatch(locCache);
                 locCache = new ArrayList<>();
             }
@@ -246,9 +257,10 @@ public class TrackingService extends Service implements SensorEventListener, Loc
     private void startListening() {
         final int MIN_DELAY = 5 * 1000;
         final int MIN_DIST = 10;
+        final int SENSOR_PERIOD = 200000;
 
         if (accelerometer != null) {
-            sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+            sensorManager.registerListener(this, accelerometer, SENSOR_PERIOD);
         }
         if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) && ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, MIN_DELAY, MIN_DIST, this);
