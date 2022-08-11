@@ -225,6 +225,7 @@ public class DataRepository {
         if (tripSegs.size() < 3) {
             myDao.delAccGt(tripID, new Date(0));
             myDao.delLocGt(tripID, new Date(0));
+            myDao.deleteTripSurface(tripID);
             return;
         }
         Date minTS = getBlackoutStart(tripSegs, radius);
@@ -310,9 +311,17 @@ public class DataRepository {
         myDao.delLocLt(tripID, minTS);
         myDao.delAccGt(tripID, maxTS);
         myDao.delLocGt(tripID, maxTS);
+
+        if (myDao.countLocs(tripID) == 0) {
+            myDao.deleteTripSurface(tripID);
+        }
     }
 
     public void insertTrip(TripSurface trip) {
-        AppDatabase.getExecutor().execute(() -> myDao.insertTrip(trip));
+        AppDatabase.getExecutor().execute(() -> myDao.insertSurface(trip));
+    }
+
+    public void updateTrip(TripSurface trip) {
+        AppDatabase.getExecutor().execute(() -> myDao.updateSurface(trip));
     }
 }

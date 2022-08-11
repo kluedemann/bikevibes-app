@@ -280,6 +280,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceDialogFrag
         mySwitch.setOnCheckedChangeListener((compoundButton, isActive) -> {
             if (isActive && !trackingService.getTracking()) {
                 // Start TrackingService
+                viewModel.insertSurface(trackingService.getTripID() + 1);
                 Intent intent = new Intent(getApplicationContext(), TrackingService.class);
                 getApplicationContext().startService(intent);
             } else if (!isActive && trackingService.getTracking()) {
@@ -442,6 +443,6 @@ public class MainActivity extends AppCompatActivity implements SurfaceDialogFrag
 
     @Override
     public void onSelect(DialogFragment dialog, String surface) {
-        viewModel.setSurface(trackingService.getTripID(), surface);
+        viewModel.updateSurface(trackingService.getTripID(), surface);
     }
 }

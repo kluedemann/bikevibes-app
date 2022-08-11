@@ -22,29 +22,29 @@ import java.util.List;
  */
 public class TrackingViewModel extends AndroidViewModel {
 
-    private final DataRepository mRepository;
+    private final DataRepository repository;
     private List<Integer> trips;
     private int tripIndex = -1;
 
     public TrackingViewModel(Application application) {
         super(application);
         BikeApp app = (BikeApp) application;
-        mRepository = app.getRepository();
+        repository = app.getRepository();
     }
 
     // ************************** LiveData Getter Methods ***********************************
     LiveData<TripSummary> getTripSummary() {
-        return mRepository.getTripSummary();
+        return repository.getTripSummary();
     }
 
-    LiveData<List<Integer>> getTrips() {return mRepository.getTrips();}
+    LiveData<List<Integer>> getTrips() {return repository.getTrips();}
 
     /**
      * Update the trip summary shown in the interface
      */
     void update() {
         if (trips != null && trips.size() > 0 && tripIndex > -1) {
-            mRepository.update(trips.get(tripIndex));
+            repository.update(trips.get(tripIndex));
         }
     }
 
@@ -133,7 +133,11 @@ public class TrackingViewModel extends AndroidViewModel {
         }
     }
 
-    void setSurface(int tripID, String surface) {
-        mRepository.insertTrip(new TripSurface(tripID, surface));
+    void insertSurface(int tripID) {
+        repository.insertTrip(new TripSurface(tripID, null));
+    }
+
+    void updateSurface(int tripID, String surface) {
+        repository.updateTrip(new TripSurface(tripID, surface));
     }
 }

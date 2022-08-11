@@ -6,6 +6,7 @@ import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
+import androidx.room.Update;
 
 import java.util.Date;
 import java.util.List;
@@ -102,7 +103,7 @@ public interface TrackingDao {
     void deleteAllSegments();
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    void insertTrip(TripSurface trip);
+    void insertSurface(TripSurface trip);
 
     @Delete
     void deleteSurface(TripSurface trip);
@@ -112,4 +113,13 @@ public interface TrackingDao {
 
     @Query("DELETE FROM TripSurface")
     void deleteAllSurfaces();
+
+    @Query("DELETE FROM tripsurface WHERE tripID = :tripID")
+    void deleteTripSurface(int tripID);
+
+    @Query("SELECT COUNT(*) FROM locationdata WHERE tripID = :tripID")
+    int countLocs(int tripID);
+
+    @Update
+    void updateSurface(TripSurface trip);
 }
