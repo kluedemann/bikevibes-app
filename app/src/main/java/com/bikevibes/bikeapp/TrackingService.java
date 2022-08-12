@@ -1,6 +1,7 @@
 package com.bikevibes.bikeapp;
 
-import static java.lang.Math.abs;
+import static android.opengl.Matrix.multiplyMV;
+import static android.opengl.Matrix.transposeM;
 
 import android.Manifest;
 import android.app.Notification;
@@ -34,28 +35,192 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class TrackingService extends Service implements SensorEventListener, LocationListener {
+public class TrackingService extends Service {
     private static final String TAG = "TrackingService";
 
     private int tripID;
     private boolean isTracking = false;
     private SensorManager sensorManager;
-    private Sensor accelerometer;
-    private LocationManager locationManager;
     private final IBinder binder = new LocalBinder();
     private DataRepository repository;
-    private boolean isLinear = true;
-    private final float[] gravity = new float[3];
     private PowerManager.WakeLock wakeLock;
-    private List<AccelerometerData> accelCache = new ArrayList<>();
-    private List<LocationData> locCache = new ArrayList<>();
-    private int numInserted;
-    private Date previous = null;
+
+    private AccelTracker accelTracker;
+    private LocationTracker locationTracker;
+    private RotationTracker rotationTracker;
 
     // Binder class to return the Service
     public class LocalBinder extends Binder {
         TrackingService getService() {
             return TrackingService.this;
+        }
+    }
+
+    class AccelTracker implements SensorEventListener {
+        private static final int SENSOR_DELAY = 200000;
+        private static final int CACHE_SIZE = 25;
+        private static final float TIME_CONSTANT = 1.8f;
+
+        private List<AccelerometerData> accelCache = new ArrayList<>();
+        private final float[] gravity = new float[3];
+        private Date previous = null;
+        private final Sensor accelerometer;
+
+        public AccelTracker() {
+            accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        }
+
+        public void start() {
+            sensorManager.registerListener(this, accelerometer, SENSOR_DELAY);
+        }
+
+        public void stop() {
+            sensorManager.unregisterListener(this);
+            flush();
+        }
+
+        private void flush() {
+            repository.insertAccelBatch(accelCache);
+            accelCache = new ArrayList<>();
+        }
+
+        @NonNull
+        private AccelerometerData getData(SensorEvent event) {
+            Date date = new Date();
+            float[] linear_acceleration = new float[4];
+            if (rotationTracker.isActive()) {
+                float[] temp = new float[4];
+                temp[0] = event.values[0];
+                temp[1] = event.values[1];
+                temp[2] = event.values[2];
+                temp[3] = 0;
+                float[] rotation = new float[16];
+                transposeM(rotation, 0, rotationTracker.getRotationMatrix(), 0);
+                multiplyMV(linear_acceleration, 0, rotation, 0, temp, 0);
+                linear_acceleration[2] -= 9.81f;
+            } else {
+
+                float dt = 0.2f;
+                if (previous != null) {
+                    dt = (date.getTime() - previous.getTime()) / 1000.0f;
+                }
+                previous = date;
+                final float alpha = TIME_CONSTANT / (TIME_CONSTANT + dt);
+
+                // Isolate the force of gravity with the low-pass filter.
+                gravity[0] = alpha * gravity[0] + (1 - alpha) * event.values[0];
+                gravity[1] = alpha * gravity[1] + (1 - alpha) * event.values[1];
+                gravity[2] = alpha * gravity[2] + (1 - alpha) * event.values[2];
+
+                // Remove the gravity contribution with the high-pass filter.
+                linear_acceleration[0] = event.values[0] - gravity[0];
+                linear_acceleration[1] = event.values[1] - gravity[1];
+                linear_acceleration[2] = event.values[2] - gravity[2];
+            }
+            return new AccelerometerData(date, linear_acceleration, tripID);
+        }
+
+        @Override
+        public void onSensorChanged(@NonNull SensorEvent event) {
+            if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+                accelCache.add(getData(event));
+                if (accelCache.size() == CACHE_SIZE) {
+                    flush();
+                }
+            }
+        }
+
+        @Override
+        public void onAccuracyChanged(Sensor sensor, int i) {
+
+        }
+    }
+
+    class LocationTracker implements LocationListener {
+        private static final int CACHE_SIZE = 1;
+        private static final int MIN_DELAY = 5 * 1000;
+        private static final int MIN_DIST = 10;
+
+        private List<LocationData> locCache = new ArrayList<>();
+        private final LocationManager locationManager;
+
+        public LocationTracker() {
+            locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        }
+
+        public void start() {
+            if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) && ContextCompat.checkSelfPermission(TrackingService.this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, MIN_DELAY, MIN_DIST, this);
+            }
+        }
+
+        public void stop() {
+            locationManager.removeUpdates(this);
+            flush();
+        }
+
+        private void flush() {
+            repository.insertLocBatch(locCache);
+            locCache = new ArrayList<>();
+        }
+
+        @Override
+        public void onLocationChanged(@NonNull Location loc) {
+            Date date = new Date();
+            LocationData locData = new LocationData(date, loc.getLatitude(), loc.getLongitude(), tripID);
+            locCache.add(locData);
+            if (locCache.size() == CACHE_SIZE) {
+                flush();
+            }
+        }
+    }
+
+    class RotationTracker implements SensorEventListener {
+        private static final int SENSOR_DELAY = 1000000;
+
+        private final boolean isActive;
+        private final float[] rotationMatrix;
+        private final Sensor rotationSensor;
+
+        public RotationTracker() {
+            rotationSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
+            isActive = rotationSensor != null;
+
+            rotationMatrix = new float[16];
+            rotationMatrix[0] = 1;
+            rotationMatrix[5] = 1;
+            rotationMatrix[10] = 1;
+            rotationMatrix[15] = 1;
+        }
+
+        public void start() {
+            if (isActive) {
+                sensorManager.registerListener(this, rotationSensor, SENSOR_DELAY);
+            }
+        }
+
+        public void stop() {
+            sensorManager.unregisterListener(this);
+        }
+
+        public boolean isActive() {
+            return isActive;
+        }
+
+        public float[] getRotationMatrix() {
+            return rotationMatrix;
+        }
+
+        @Override
+        public void onSensorChanged(SensorEvent event) {
+            if (event.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
+                SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values);
+            }
+        }
+
+        @Override
+        public void onAccuracyChanged(Sensor sensor, int i) {
+
         }
     }
 
@@ -75,13 +240,9 @@ public class TrackingService extends Service implements SensorEventListener, Loc
 
         // Get accelerometer sensor
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
-        if (accelerometer == null) {
-            isLinear = false;
-            accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        }
-
-        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        rotationTracker = new RotationTracker();
+        accelTracker = new AccelTracker();
+        locationTracker = new LocationTracker();
 
         String PREFS = getString(R.string.preference_file_key);
         SharedPreferences sharedPref = getSharedPreferences(PREFS, Context.MODE_PRIVATE);
@@ -120,7 +281,6 @@ public class TrackingService extends Service implements SensorEventListener, Loc
                 .setAutoCancel(true).build(); // clear notification after click
         startForeground(NOTIFICATION_ID, notification);
 
-        numInserted = 0;
         tripID++;
         isTracking = true;
         startListening();
@@ -166,88 +326,11 @@ public class TrackingService extends Service implements SensorEventListener, Loc
     public void onDestroy() {
         super.onDestroy();
         Log.d(TAG, "Destroyed!");
-        sensorManager.unregisterListener(this);
-        locationManager.removeUpdates(this);
+        rotationTracker.stop();
+        accelTracker.stop();
+        locationTracker.stop();
         if (wakeLock.isHeld()) {
             wakeLock.release();
-        }
-    }
-
-    /**
-     * Update the accelerometer records with the new sensor reading.
-     * If storing data, insert the record into the database.
-     * If using raw accelerometer data, filter out gravity.
-     * Otherwise, assume that linear acceleration is used, which filters gravity automatically.
-     * Called when a SensorEvent is received from the system.
-     * @param event - the SensorEvent triggered by the accelerometer
-     */
-    @Override
-    public void onSensorChanged(@NonNull SensorEvent event) {
-        final int cache_size = 250;
-
-        Date date = new Date();
-        float[] linear_acceleration = event.values.clone();
-
-        if (!isLinear) {
-            float dt = 0.2f;
-            if (previous != null) {
-                dt = (date.getTime() - previous.getTime()) / 1000.0f;
-            }
-            previous = date;
-            final float t = 1.8f;
-            final float alpha = t / (t + dt);
-
-            // Isolate the force of gravity with the low-pass filter.
-            gravity[0] = alpha * gravity[0] + (1 - alpha) * event.values[0];
-            gravity[1] = alpha * gravity[1] + (1 - alpha) * event.values[1];
-            gravity[2] = alpha * gravity[2] + (1 - alpha) * event.values[2];
-
-            // Remove the gravity contribution with the high-pass filter.
-            linear_acceleration[0] = event.values[0] - gravity[0];
-            linear_acceleration[1] = event.values[1] - gravity[1];
-            linear_acceleration[2] = event.values[2] - gravity[2];
-        }
-        AccelerometerData acc = new AccelerometerData(date, linear_acceleration, tripID);
-        if (isTracking) {
-            accelCache.add(acc);
-            if (accelCache.size() == cache_size) {
-                numInserted += cache_size;
-                repository.insertAccelBatch(accelCache);
-                accelCache = new ArrayList<>();
-            }
-        }
-    }
-
-    /**
-     * Called when a Sensor reports an accuracy change.
-     * Currently not implemented.
-     * @param sensor - the sensor whose accuracy changed
-     * @param i - the new accuracy of the sensor (SensorManager.SENSOR_STATUS_* flag)
-     */
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int i) {
-        // no-op
-    }
-
-    /**
-     * Update the current location when an update is received from the GPS.
-     * If storing data, insert it into the database.
-     * Called when the LocationManager receives an update from the GPS
-     * @param loc- the new location; contains latitude and longitude
-     */
-    @Override
-    public void onLocationChanged(@NonNull Location loc) {
-        final int cache_size = 10;
-        Date date = new Date();
-        LocationData locData = new LocationData(date, loc.getLatitude(), loc.getLongitude(), tripID);
-        if (isTracking) {
-            //Log.d(TAG, locData.toString());
-            locCache.add(locData);
-            if (locCache.size() == cache_size) {
-                numInserted += cache_size;
-                repository.insertLocBatch(locCache);
-                locCache = new ArrayList<>();
-            }
         }
     }
 
@@ -255,16 +338,9 @@ public class TrackingService extends Service implements SensorEventListener, Loc
      * Register listeners for accelerometer and location updates.
      */
     private void startListening() {
-        final int MIN_DELAY = 5 * 1000;
-        final int MIN_DIST = 10;
-        final int SENSOR_PERIOD = 200000;
-
-        if (accelerometer != null) {
-            sensorManager.registerListener(this, accelerometer, SENSOR_PERIOD);
-        }
-        if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) && ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, MIN_DELAY, MIN_DIST, this);
-        }
+        rotationTracker.start();
+        accelTracker.start();
+        locationTracker.start();
     }
 
     /**
@@ -274,15 +350,9 @@ public class TrackingService extends Service implements SensorEventListener, Loc
         Log.d(TAG, "Tracking stopped!");
         isTracking = false;
 
-        repository.insertLocBatch(locCache);
-        repository.insertAccelBatch(accelCache);
-        numInserted += locCache.size() + accelCache.size();
-        locCache = new ArrayList<>();
-        accelCache = new ArrayList<>();
-        Log.d(TAG, String.format("INSERTED: %d", numInserted));
-
-        sensorManager.unregisterListener(this);
-        locationManager.removeUpdates(this);
+        rotationTracker.stop();
+        accelTracker.stop();
+        locationTracker.stop();
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         int blackoutRadius = prefs.getInt("privacy_radius", 50);
