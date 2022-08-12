@@ -21,6 +21,7 @@ import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
 import android.os.PowerManager;
+import android.os.SystemClock;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -60,18 +61,23 @@ public class TrackingService extends Service {
         private static final int SENSOR_DELAY = 200000;
         private static final int CACHE_SIZE = 25;
         private static final float TIME_CONSTANT = 1.8f;
+        private static final int MAX_LATENCY = 1000000;
 
         private List<AccelerometerData> accelCache = new ArrayList<>();
         private final float[] gravity = new float[3];
+        private final long diff;
         private Date previous = null;
         private final Sensor accelerometer;
 
         public AccelTracker() {
             accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+            diff = new Date().getTime() - SystemClock.elapsedRealtime();
         }
 
         public void start() {
-            sensorManager.registerListener(this, accelerometer, SENSOR_DELAY);
+            if (accelerometer != null) {
+                sensorManager.registerListener(this, accelerometer, SENSOR_DELAY, MAX_LATENCY);
+            }
         }
 
         public void stop() {
@@ -85,45 +91,65 @@ public class TrackingService extends Service {
         }
 
         @NonNull
-        private AccelerometerData getData(SensorEvent event) {
-            Date date = new Date();
-            float[] linear_acceleration = new float[4];
+        private AccelerometerData getAccel(SensorEvent event) {
+            Date date = getDate(event);
+            float[] accel;
             if (rotationTracker.isActive()) {
-                float[] temp = new float[4];
-                temp[0] = event.values[0];
-                temp[1] = event.values[1];
-                temp[2] = event.values[2];
-                temp[3] = 0;
-                float[] rotation = new float[16];
-                transposeM(rotation, 0, rotationTracker.getRotationMatrix(), 0);
-                multiplyMV(linear_acceleration, 0, rotation, 0, temp, 0);
-                linear_acceleration[2] -= 9.81f;
+                accel = getGyroAccel(event.values);
             } else {
+                accel = getFilterAccel(event.values, date);
 
-                float dt = 0.2f;
-                if (previous != null) {
-                    dt = (date.getTime() - previous.getTime()) / 1000.0f;
-                }
-                previous = date;
-                final float alpha = TIME_CONSTANT / (TIME_CONSTANT + dt);
-
-                // Isolate the force of gravity with the low-pass filter.
-                gravity[0] = alpha * gravity[0] + (1 - alpha) * event.values[0];
-                gravity[1] = alpha * gravity[1] + (1 - alpha) * event.values[1];
-                gravity[2] = alpha * gravity[2] + (1 - alpha) * event.values[2];
-
-                // Remove the gravity contribution with the high-pass filter.
-                linear_acceleration[0] = event.values[0] - gravity[0];
-                linear_acceleration[1] = event.values[1] - gravity[1];
-                linear_acceleration[2] = event.values[2] - gravity[2];
             }
-            return new AccelerometerData(date, linear_acceleration, tripID);
+            Log.d(TAG, String.format("Date: %d, Sensor: %d", new Date().getTime(), date.getTime()));
+            return new AccelerometerData(date, accel, tripID);
+        }
+
+        private Date getDate(@NonNull SensorEvent event) {
+            return new Date(event.timestamp / 1000000 + diff);
+        }
+
+        @NonNull
+        private float[] getFilterAccel(float[] rawAccel, Date date) {
+            float dt = 0.2f;
+            if (previous != null) {
+                dt = (date.getTime() - previous.getTime()) / 1000.0f;
+            }
+            previous = date;
+            final float alpha = TIME_CONSTANT / (TIME_CONSTANT + dt);
+
+            // Isolate the force of gravity with the low-pass filter.
+            gravity[0] = alpha * gravity[0] + (1 - alpha) * rawAccel[0];
+            gravity[1] = alpha * gravity[1] + (1 - alpha) * rawAccel[1];
+            gravity[2] = alpha * gravity[2] + (1 - alpha) * rawAccel[2];
+
+            // Remove the gravity contribution with the high-pass filter.
+            float[] accel = new float[4];
+            accel[0] = rawAccel[0] - gravity[0];
+            accel[1] = rawAccel[1] - gravity[1];
+            accel[2] = rawAccel[2] - gravity[2];
+            return accel;
+        }
+
+        @NonNull
+        private float[] getGyroAccel(@NonNull float[] rawAccel) {
+            float[] temp = new float[4];
+            temp[0] = rawAccel[0];
+            temp[1] = rawAccel[1];
+            temp[2] = rawAccel[2];
+            temp[3] = 0;
+
+            float[] accel = new float[4];
+            float[] rotation = new float[16];
+            transposeM(rotation, 0, rotationTracker.getRotationMatrix(), 0);
+            multiplyMV(accel, 0, rotation, 0, temp, 0);
+            accel[2] -= 9.81f;
+            return accel;
         }
 
         @Override
         public void onSensorChanged(@NonNull SensorEvent event) {
             if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-                accelCache.add(getData(event));
+                accelCache.add(getAccel(event));
                 if (accelCache.size() == CACHE_SIZE) {
                     flush();
                 }
@@ -176,7 +202,8 @@ public class TrackingService extends Service {
     }
 
     class RotationTracker implements SensorEventListener {
-        private static final int SENSOR_DELAY = 1000000;
+        private static final int SENSOR_DELAY = 200000;
+        private static final int MAX_LATENCY = 1000000;
 
         private final boolean isActive;
         private final float[] rotationMatrix;
@@ -195,7 +222,7 @@ public class TrackingService extends Service {
 
         public void start() {
             if (isActive) {
-                sensorManager.registerListener(this, rotationSensor, SENSOR_DELAY);
+                sensorManager.registerListener(this, rotationSensor, SENSOR_DELAY, MAX_LATENCY);
             }
         }
 
