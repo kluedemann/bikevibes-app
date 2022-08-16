@@ -4,12 +4,12 @@
     <string name="unknown_text">Unknown</string>
     <string name="tracking_text">Tracking</string>
     <string name="upload_text">Upload</string>
-    <string name="date_label_text">Date</string>
-    <string name="dist_label_text">Distance</string>
-    <string name="speed_label_text">Avg Speed</string>
-    <string name="end_label_text">End Time</string>
-    <string name="start_label_text">Start Time</string>
-    <string name="bump_label_text">Bumpiness</string>
+    <string name="date_label_text">Date:</string>
+    <string name="dist_label_text">Distance:</string>
+    <string name="speed_label_text">Avg. Speed:</string>
+    <string name="end_label_text">End Time:</string>
+    <string name="start_label_text">Start Time:</string>
+    <string name="bump_label_text">Bumpiness:</string>
 
     <!-- Toast Messages -->
     <string name="uploaded_template">Uploaded Rows: %d/%d</string>

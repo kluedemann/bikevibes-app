@@ -8,6 +8,7 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.DialogFragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.preference.PreferenceManager;
 
 import android.Manifest;
 import android.content.BroadcastReceiver;
@@ -19,7 +20,6 @@ import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.preference.PreferenceManager;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Button;
@@ -34,6 +34,7 @@ import org.osmdroid.tileprovider.tilesource.ThunderforestTileSource;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.CopyrightOverlay;
+import org.osmdroid.views.overlay.Overlay;
 import org.osmdroid.views.overlay.Polyline;
 
 import java.text.DateFormat;
@@ -200,7 +201,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceDialogFrag
         // Setup map overlay
         CopyrightOverlay overlay = new CopyrightOverlay(ctx);
         overlay.setAlignRight(true);
-        overlay.setTextColor(getResources().getColor(android.R.color.tab_indicator_text));
+        overlay.setTextColor(ContextCompat.getColor(ctx, android.R.color.tab_indicator_text));
         map.getOverlays().add(overlay);
 
         // Configure map settings
@@ -314,7 +315,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceDialogFrag
             setEndText(trip.getEnd());
             setDistText(trip.getDist());
             setSpeedText(trip.getSpeed());
-            setBumpText(trip.getBumpiness());
+            setBumpText(trip.getBumpScore());
         } else {
             resetTrip();
         }
@@ -394,7 +395,7 @@ public class MainActivity extends AppCompatActivity implements SurfaceDialogFrag
      * @param bumpiness - the RMS of vertical acceleration over the trip
      */
     private void setBumpText(Double bumpiness) {
-        dataViews[1].setText(String.format(Locale.getDefault(), "%.2f m/s^2", bumpiness));
+        dataViews[1].setText(String.format(Locale.getDefault(), "%.0f / 100", bumpiness));
     }
 
     /**
@@ -435,9 +436,11 @@ public class MainActivity extends AppCompatActivity implements SurfaceDialogFrag
      * @param lines - the new lines to be drawn to the map
      */
     private void setMapLines(@NonNull List<Polyline> lines) {
-        map.getOverlayManager().clear();
+        Overlay copyright = map.getOverlays().get(0);
+        map.getOverlays().clear();
+        map.getOverlays().add(copyright);
         for (int i = 0; i < lines.size(); i++) {
-            map.getOverlayManager().add(lines.get(i));
+            map.getOverlays().add(lines.get(i));
         }
     }
 

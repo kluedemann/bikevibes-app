@@ -79,6 +79,36 @@ public class TripSummary {
         this.zoom = zoom;
     }
 
+    /**
+     * Calculate the bumpiness index from the RMS of vertical acceleration.
+     * f transforms the score to a desired distribution.
+     * MAX is the input that gives the maximum score
+     * SCALE is the maximum score
+     * @return - the bumpiness score to be displayed
+     */
+    public double getBumpScore() {
+        final double MAX = 5.0;
+        final double SCALE = 100;
+
+        return Math.min(f(bumpiness) / f(MAX), 1) * SCALE;
+    }
+
+    /**
+     * Transform the average RMS to obtain a bumpiness score.
+     * Uses a log transformation to provide better distinction between low acceleration values.
+     * k - a horizontal stretching constant
+     * MIN - the highest value that maps to 0 bumpiness
+     * @param x - the average RMS of vertical acceleration over the trip
+     * @return - the transformed (but not normalized) bumpiness score
+     */
+    private double f(double x) {
+        final double k = 2.0;
+        final double MIN = 0.2;
+
+        double newX = Math.max(0, x - MIN);
+        return Math.log(k * newX + 1);
+    }
+
     // *************************** Getter Methods *****************************
     public int getTripID() {
         return tripID;
