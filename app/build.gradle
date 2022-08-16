@@ -21,8 +21,8 @@ android {
         applicationId "com.bikevibes.bikeapp"
         minSdk 19
         targetSdk 32
-        versionCode 12
-        versionName "0.2.4"
+        versionCode 13
+        versionName "0.2.5"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 

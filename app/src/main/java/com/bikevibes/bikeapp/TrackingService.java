@@ -243,7 +243,7 @@ public class TrackingService extends Service {
      */
     class AccelTracker implements SensorEventListener {
         private static final int SENSOR_DELAY = 200000;
-        private static final int CACHE_SIZE = 25;
+        private static final int CACHE_SIZE = 250;
         private static final float TIME_CONSTANT = 1.8f;
         private static final int MAX_LATENCY = 1000000;
 
@@ -398,7 +398,7 @@ public class TrackingService extends Service {
      * Track the device's location using the GPS and insert records into the database.
      */
     class LocationTracker implements LocationListener {
-        private static final int CACHE_SIZE = 1;
+        private static final int CACHE_SIZE = 10;
         private static final int MIN_DELAY = 5 * 1000;
         private static final int MIN_DIST = 10;
 
