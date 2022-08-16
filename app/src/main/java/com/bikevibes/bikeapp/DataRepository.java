@@ -1,7 +1,5 @@
 package com.bikevibes.bikeapp;
 
-import android.util.Log;
-
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
@@ -231,7 +229,6 @@ public class DataRepository {
         Date minTS = getBlackoutStart(tripSegs, radius);
         Date maxTS = getBlackoutEnd(tripSegs, radius);
         deleteBlackoutData(tripID, minTS, maxTS);
-        Log.d("Repository", String.format("%d, %d", minTS.getTime(), maxTS.getTime()));
     }
 
     /**
