@@ -13,6 +13,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.preference.EditTextPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceManager;
@@ -91,7 +92,7 @@ public class SettingsActivity extends AppCompatActivity {
          */
         private void initializeAlias(BikeApp app) {
             // Setup alias preference
-            Preference aliasPref = findPreference(getString(R.string.alias_pref_key));
+            EditTextPreference aliasPref = findPreference(getString(R.string.alias_pref_key));
             if (aliasPref != null) {
                 // Set summary to current alias value
                 SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(app);
@@ -105,6 +106,9 @@ public class SettingsActivity extends AppCompatActivity {
                     app.getQueue().add(createRequest(userID, newAlias, app));
                     return false;
                 });
+
+                // Set a hint for the text box
+                aliasPref.setOnBindEditTextListener(editText -> editText.setHint(R.string.alias_pref_hint));
             }
         }
 
@@ -133,16 +137,16 @@ public class SettingsActivity extends AppCompatActivity {
                 boolean isSuccess = response.optBoolean(getString(R.string.HTTP_success_key), false);
                 if (isSuccess) {
                     updateAlias(alias);
-                    Toast.makeText(app, getString(R.string.alias_success), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(app, app.getString(R.string.alias_success), Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(app, getString(R.string.alias_error), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(app, app.getString(R.string.alias_error), Toast.LENGTH_SHORT).show();
                 }
             }, error -> {
                 // onErrorResponse: Called upon receiving an error response
                 if (error instanceof ServerError && error.networkResponse.statusCode == 409) {
-                    Toast.makeText(app, getString(R.string.duplicate_alias), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(app, app.getString(R.string.duplicate_alias), Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(app, getString(R.string.alias_error), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(app, app.getString(R.string.alias_error), Toast.LENGTH_SHORT).show();
                 }
             });
 
@@ -318,13 +322,13 @@ public class SettingsActivity extends AppCompatActivity {
                 boolean isSuccess = response.optBoolean(getString(R.string.HTTP_success_key), false);
                 if (isSuccess) {
                     updateAlias(null);
-                    Toast.makeText(app, R.string.deleted_text, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(app, app.getString(R.string.deleted_text), Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(app, getString(R.string.delete_error), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(app, app.getString(R.string.delete_error), Toast.LENGTH_SHORT).show();
                 }
             }, error -> {
                 // onErrorResponse: Called upon receiving an error response
-                Toast.makeText(app, getString(R.string.delete_error), Toast.LENGTH_SHORT).show();
+                Toast.makeText(app, app.getString(R.string.delete_error), Toast.LENGTH_SHORT).show();
             });
 
             jORequest.setTag(TAG);
