@@ -122,4 +122,13 @@ public interface TrackingDao {
 
     @Update
     void updateSurface(TripSurface trip);
+
+    @Query("DELETE FROM LocationData WHERE tripID <= :maxTrip")
+    void deleteLocList(int maxTrip);
+
+    @Query("DELETE FROM accelerometerdata WHERE tripID <= :maxTrip")
+    void deleteAccList(int maxTrip);
+
+    @Query("DELETE FROM tripsurface WHERE tripID <= :maxTrip")
+    void deleteSurfaceList(int maxTrip);
 }

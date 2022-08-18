@@ -11,11 +11,10 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-import androidx.preference.PreferenceManager;
 
+import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
-import com.android.volley.ServerError;
 import com.android.volley.TimeoutError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.bikevibes.bikeapp.db.AccelerometerData;
@@ -23,8 +22,12 @@ import com.bikevibes.bikeapp.db.DataInstance;
 import com.bikevibes.bikeapp.db.LocationData;
 import com.bikevibes.bikeapp.db.TripSurface;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
+import org.jetbrains.annotations.Contract;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -38,9 +41,6 @@ public class UploadService extends Service {
     private static final String ACTION_UPLOAD = "com.bikevibes.bikeapp.UPLOAD";
 
     private DataRepository repository;
-    private int numToUpload;
-    private int numResponses;
-    private int numUploaded;
     private RequestQueue queue;
     private boolean isUploading = false;
     private ExecutorService uploadExecutor;
@@ -86,35 +86,10 @@ public class UploadService extends Service {
         super.onStartCommand(intent, flags, startID);
         Log.d(TAG, "Started!");
         if (!isUploading) {
-            uploadExecutor.execute(this::uploadUser);
             uploadExecutor.execute(this::uploadData);
             isUploading = true;
         }
         return START_NOT_STICKY;
-    }
-
-    private void uploadUser() {
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        String alias = prefs.getString(getString(R.string.alias_pref_key), null);
-
-        String url = String.format("http://162.246.157.171:8080/upload/alias?user_id=%s", userID);
-        if (alias != null) {
-            try {
-                alias = URLEncoder.encode(alias, "utf-8");
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
-            }
-            url += String.format("&alias=%s", alias);
-        }
-
-        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, null, response -> {
-            // onResponse: Called upon receiving a response from the server
-        }, error -> {
-            // onErrorResponse: Called upon receiving an error response
-            Log.e(TAG, error.toString());
-        });
-        request.setTag(TAG);
-        queue.add(request);
     }
 
     /**
@@ -145,8 +120,6 @@ public class UploadService extends Service {
             SharedPreferences.Editor editor = sharedPref.edit();
             editor.putString(USER_KEY, userID);
             editor.apply();
-
-
         }
     }
 
@@ -155,21 +128,16 @@ public class UploadService extends Service {
      */
     private void uploadData() {
         // Query data
-
         List<LocationData> locations = repository.getLocs(tripID);
         List<AccelerometerData> accel_readings = repository.getAccels(tripID);
         List<TripSurface> surfaces = repository.getSurfaces(tripID);
 
         // Initialize counters
-        numToUpload = locations.size() + accel_readings.size() + surfaces.size();
-        numResponses = 0;
-        numUploaded = 0;
+        int numToUpload = locations.size() + accel_readings.size() + surfaces.size();
 
+        // Return if no data to upload
         if (numToUpload == 0) {
-            Intent intent = new Intent(ACTION_UPLOAD);
-            intent.putExtra(getString(R.string.success_key), false);
-            intent.putExtra(getString(R.string.message_key), getString(R.string.no_data_text));
-            uploadCompleted(intent);
+            uploadCompleted(getString(R.string.no_data_text));
             return;
         }
 
@@ -182,115 +150,79 @@ public class UploadService extends Service {
                 .setAutoCancel(true).build(); // clear notification after click
         startForeground(NOTIFICATION_ID, notification);
 
-        // Upload surface data
-        for (int i = 0; i < surfaces.size(); i++) {
-            upload(surfaces.get(i), userID);
-        }
-
-        // Upload location data
-        for (int i = 0; i < locations.size(); i++) {
-            LocationData loc = locations.get(i);
-            upload(loc, userID);
-        }
-
-        // Upload accelerometer data
-        for (int i = 0; i < accel_readings.size(); i++) {
-            AccelerometerData acc = accel_readings.get(i);
-            upload(acc, userID);
-        }
-
-
-
-        //writePrefs();
-    }
-
-    /**
-     * Upload a single data instance to the server using an HTTP POST request.
-     * Uses a Volley request queue to handle requests and responses.
-     * Define callbacks that are invoked upon receiving a response from the server.
-     * Handle successful and unsuccessful responses.
-     *
-     * @param data (DataInstance) - the instance to upload
-     */
-    private void upload(@NonNull DataInstance data, String userID) {
-        String url = data.getURL(userID);
-
-        // Create the HTTP request
-        JsonObjectRequest jORequest = new JsonObjectRequest(Request.Method.POST, url, null, response -> {
-            // onResponse: Called upon receiving a response from the server
-            //Log.d(TAG, String.format("SUCCESS: %s", isSuccess));
-            boolean isSuccess = response.optBoolean(getString(R.string.HTTP_success_key), false);
-            if (isSuccess) {
-                repository.delete(data);
-            }
-            requestCompleted(isSuccess);
+        // Create the Volley request to send to the server
+        final String url = "http://162.246.157.171:8080/upload";
+        JSONObject data = getJSON(locations, accel_readings, surfaces);
+        JsonObjectRequest jORequest = new JsonObjectRequest(Request.Method.POST, url, data, response -> {
+            repository.deleteUpload(tripID);
+            uploadCompleted(getString(R.string.upload_success));
         }, error -> {
-            // onErrorResponse: Called upon receiving an error response
-            //Log.e(TAG, error.toString());
             if (error instanceof TimeoutError) {
-                // Sever could not be reached
-                queue.cancelAll(TAG);
-
-                // Send broadcast back
-                Intent intent = new Intent(ACTION_UPLOAD);
-                intent.putExtra(getString(R.string.success_key), false);
-                intent.putExtra(getString(R.string.message_key), getString(R.string.timeout_text));
-                uploadCompleted(intent);
-            } else if (error instanceof ServerError && error.networkResponse.statusCode == 409) {
-                // Discard local copy if server has duplicate data
-                Log.d(TAG, "Duplicate!");
-                repository.delete(data);
+                uploadCompleted(getString(R.string.timeout_text));
+            } else {
+                uploadCompleted(getString(R.string.upload_error));
             }
-            requestCompleted(false);
         });
 
-        // Add request to the queue
+        // Set the retry policy and tag
+        int INITIAL_TIMEOUT = Math.max(5000, numToUpload / 10);
+        final int MAX_RETRIES = 0;
+        jORequest.setRetryPolicy(new DefaultRetryPolicy(INITIAL_TIMEOUT, MAX_RETRIES, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
         jORequest.setTag(TAG);
+
         queue.add(jORequest);
     }
 
     /**
-     * Keep track of how many requests are completed successfully.
-     * Called upon receiving a response or error from an HTTP request.
-     * Send a broadcast to the MainActivity once all responses have been received
-     *
-     * @param success (boolean) - true if the response was a successful one
+     * Create the JSON object to include in the POST request.
+     * Contains the user ID and arrays of each data object to upload
+     * @param locations - the list of LocationData to upload
+     * @param accels - the list of AccelerometerData to upload
+     * @param surfaces - the list of TripSurfaces to upload
+     * @return - the JSON object to be sent to the server
      */
-    private void requestCompleted(boolean success) {
-        // Increment response counters
-        if (success) {
-            numUploaded++;
+    @NonNull
+    private JSONObject getJSON(List<LocationData> locations, List<AccelerometerData> accels, List<TripSurface> surfaces) {
+        JSONObject data = new JSONObject();
+        try {
+            data.put("user_id", userID);
+            data.put("accelerometer", getJsonArray(accels));
+            data.put("locations", getJsonArray(locations));
+            data.put("surfaces", getJsonArray(surfaces));
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
-        numResponses++;
-
-        // Display confirmation upon receiving final response
-        if (numResponses == numToUpload) {
-            Log.d(TAG, String.format("SUCCESSES: %d, TOTAL: %d", numUploaded, numResponses));
-
-            // Send broadcast
-            Intent intent = new Intent(ACTION_UPLOAD);
-            intent.putExtra(getString(R.string.success_key), true);
-            intent.putExtra(getString(R.string.uploaded_key), numUploaded);
-            intent.putExtra(getString(R.string.total_key), numResponses);
-            uploadCompleted(intent);
-        }
+        return data;
     }
 
     /**
-     * Send a broadcast and stop the service once it is completed.
-     * This may be called on an error, no data, or after all instances have been uploaded.
-     *
-     * @param intent (Intent) - the message to return to the MainActivity
-     *               success - (boolean) whether upload completed successfully
-     *               total - (int) number of rows attempted to upload
-     *               uploaded - (int) number of rows uploaded successfully
-     *               message - (String) message to display if unsuccessful
+     * Create a JSON array from a list of DataInstance objects.
+     * @param data - list of DataInstance objects to convert to JSON
+     * @return - the array of JSON objects representing the data
      */
-    private void uploadCompleted(Intent intent) {
-        Log.d(TAG, "Stopped!");
+    @NonNull
+    @Contract("_ -> new")
+    private JSONArray getJsonArray(@NonNull List<? extends DataInstance> data) {
+        ArrayList<JSONObject> jsonData = new ArrayList<>();
+        for (DataInstance instance : data) {
+            jsonData.add(instance.toJSON());
+        }
+        return new JSONArray(jsonData);
+    }
+
+    /**
+     * Send a broadcast to the MainActivity and stop the service once it is completed.
+     * This may be called on an error, no data, or after all instances have been uploaded.
+     * @param message (str) - the message to display in a Toast
+     */
+    private void uploadCompleted(String message) {
+        // Create and send intent
+        Intent intent = new Intent(ACTION_UPLOAD);
+        intent.putExtra(getString(R.string.message_key), message);
         LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
+
+        // Destroy UploadService
         isUploading = false;
-        queue.cancelAll(TAG);
         stopSelf();
     }
 

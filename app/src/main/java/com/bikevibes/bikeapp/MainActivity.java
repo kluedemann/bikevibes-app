@@ -279,12 +279,12 @@ public class MainActivity extends AppCompatActivity implements SurfaceDialogFrag
         // Handle Tracking switch
         SwitchCompat mySwitch = findViewById(R.id.tracking_switch);
         mySwitch.setOnCheckedChangeListener((compoundButton, isActive) -> {
-            if (isActive && !trackingService.getTracking()) {
+            if (isBound && isActive && !trackingService.getTracking()) {
                 // Start TrackingService
                 viewModel.insertSurface(trackingService.getTripID() + 1);
                 Intent intent = new Intent(getApplicationContext(), TrackingService.class);
                 getApplicationContext().startService(intent);
-            } else if (!isActive && trackingService.getTracking()) {
+            } else if (isBound && !isActive && trackingService.getTracking()) {
                 trackingService.disableTracking();
                 DialogFragment fragment = new SurfaceDialogFragment();
                 fragment.show(getSupportFragmentManager(), "surface");
@@ -349,18 +349,8 @@ public class MainActivity extends AppCompatActivity implements SurfaceDialogFrag
      *               message - (String) message to display if unsuccessful
      */
     private void uploadComplete(@NonNull Intent intent) {
-        boolean success = intent.getBooleanExtra(getString(R.string.success_key), false);
-        if (success) {
-            // Display number of rows uploaded
-            int total = intent.getIntExtra(getString(R.string.total_key), 0);
-            int uploaded = intent.getIntExtra(getString(R.string.uploaded_key), 0);
-            String toast_text = String.format(Locale.getDefault(), getString(R.string.uploaded_template), uploaded, total);
-            Toast.makeText(getApplicationContext(), toast_text, Toast.LENGTH_SHORT).show();
-        } else {
-            // Display error message
-            String message = intent.getStringExtra(getString(R.string.message_key));
-            Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
-        }
+        String message = intent.getStringExtra(getString(R.string.message_key));
+        Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
         uploadButton.setEnabled(true);
     }
 

@@ -4,7 +4,8 @@ import androidx.annotation.NonNull;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
-import org.osmdroid.util.GeoPoint;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.Date;
 import java.util.Locale;
@@ -15,7 +16,6 @@ import java.util.Locale;
  */
 @Entity
 public class LocationData extends DataInstance {
-    private static final String URL_TEMPLATE = "http://162.246.157.171:8080/upload/location?user_id=%s&time_stamp=%d&trip_id=%d&latitude=%f&longitude=%f";
     private static final int RADIUS = 6371;
 
     @PrimaryKey
@@ -25,21 +25,18 @@ public class LocationData extends DataInstance {
     private Double longitude;
     private int tripID;
 
+    /**
+     * Initialize a LocationData instance from latitude/longitude coordinates.
+     * @param timestamp - the timestamp of the GPS reading
+     * @param latitude - the latitude of the GPS reading
+     * @param longitude - the longitude of the GPS reading
+     * @param tripID - the trip ID
+     */
     public LocationData(@NonNull Date timestamp, Double latitude, Double longitude, int tripID) {
         this.timestamp = timestamp;
         this.latitude = latitude;
         this.longitude = longitude;
         this.tripID = tripID;
-    }
-
-    /**
-     * Generate the URL used to upload this data instance
-     * @param user_id - the userID used to upload it
-     * @return the URL string to be sent in the HTTP request
-     */
-    @Override
-    public String getURL(String user_id) {
-        return String.format(Locale.US, URL_TEMPLATE, user_id, timestamp.getTime(), tripID, latitude, longitude);
     }
 
     /**
@@ -75,7 +72,6 @@ public class LocationData extends DataInstance {
                 + Math.sin(dLon / 2) * Math.sin(dLon / 2)
                 * Math.cos(Math.toRadians(this.getLatitude())) * Math.cos(Math.toRadians(loc.getLatitude()));
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        //Log.d("Distance", String.format(Locale.getDefault(), "%f, %f, %f", dLat, dLon, r*c));
         return RADIUS * c;
     }
 
@@ -85,7 +81,24 @@ public class LocationData extends DataInstance {
         return String.format(Locale.getDefault(),"%d, %f, %f, %d", timestamp.getTime(), latitude, longitude, tripID);
     }
 
-    // ******************************** Getter Methods ********************************************
+    /**
+     * Create a JSON object representing the LocationData instance
+     * @return - a JSON object that can be uploaded
+     */
+    public JSONObject toJSON() {
+        JSONObject jObject = new JSONObject();
+        try {
+            jObject.put("time_stamp", timestamp.getTime());
+            jObject.put("latitude", latitude);
+            jObject.put("longitude", longitude);
+            jObject.put("trip_id", tripID);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return jObject;
+    }
+
+    // *************************** Getter and Setter Methods ***************************************
 
     @NonNull
     public Date getTimestamp() {
@@ -118,9 +131,5 @@ public class LocationData extends DataInstance {
 
     public void setTripID(int tripID) {
         this.tripID = tripID;
-    }
-
-    public GeoPoint getGeoPoint() {
-        return new GeoPoint(latitude, longitude);
     }
 }

@@ -4,6 +4,9 @@ import androidx.annotation.NonNull;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.Date;
 import java.util.Locale;
 
@@ -13,7 +16,6 @@ import java.util.Locale;
  */
 @Entity
 public class AccelerometerData extends DataInstance {
-    private static final String URL_TEMPLATE = "http://162.246.157.171:8080/upload/accelerometer?user_id=%s&time_stamp=%d&trip_id=%d&x_accel=%f&y_accel=%f&z_accel=%f";
 
     @PrimaryKey
     @NonNull
@@ -23,6 +25,14 @@ public class AccelerometerData extends DataInstance {
     private Float z;
     private int tripID;
 
+    /**
+     * Default constructor for Room to use.
+     * @param timestamp - the timestamp of the sensor reading
+     * @param x - the x-coordinate of acceleration
+     * @param y - the y-coordinate of acceleration
+     * @param z - the z-coordinate (vertical) acceleration
+     * @param tripID - the trip ID of the record
+     */
     public AccelerometerData(@NonNull Date timestamp, Float x, Float y, Float z, int tripID) {
         this.timestamp = timestamp;
         this.x = x;
@@ -31,6 +41,12 @@ public class AccelerometerData extends DataInstance {
         this.tripID = tripID;
     }
 
+    /**
+     * Initialize the AccelerometerData using a vector.
+     * @param timestamp - the timestamp of the sensor reading
+     * @param values - the acceleration vector
+     * @param tripID - the trip ID of the record
+     */
     public AccelerometerData(@NonNull Date timestamp, @NonNull float[] values, int tripID) {
         this.timestamp = timestamp;
         this.x = values[0];
@@ -39,20 +55,28 @@ public class AccelerometerData extends DataInstance {
         this.tripID = tripID;
     }
 
-    /**
-     * Generate the URL used to upload this data instance.
-     * @param user_id - the userID used to upload it
-     * @return the URL string to be sent in the HTTP request
-     */
-    @Override
-    public String getURL(String user_id) {
-        return String.format(Locale.US, URL_TEMPLATE, user_id, timestamp.getTime(), tripID, x, y, z);
-    }
-
     @NonNull
     @Override
     public String toString() {
         return String.format(Locale.getDefault(),"Timestamp: %d, Trip: %d, X: %f, Y: %f, Z: %f", timestamp.getTime(), tripID, x, y, z);
+    }
+
+    /**
+     * Create a JSON object representing the AccelerometerData
+     * @return - a JSON object that can be uploaded
+     */
+    public JSONObject toJSON() {
+        JSONObject jObject = new JSONObject();
+        try {
+            jObject.put("time_stamp", timestamp.getTime());
+            jObject.put("x_accel", x);
+            jObject.put("y_accel", y);
+            jObject.put("z_accel", z);
+            jObject.put("trip_id", tripID);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return jObject;
     }
 
     /**
@@ -72,6 +96,8 @@ public class AccelerometerData extends DataInstance {
     public void insert(@NonNull TrackingDao myDao) {
         myDao.insertAccel(this);
     }
+
+    // ***************************** Getters and Setters *******************************************
 
     @NonNull
     public Date getTimestamp() {return timestamp;}

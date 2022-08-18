@@ -51,6 +51,29 @@ public class Segment {
         this.maxZAccel = maxZAccel;
     }
 
+    public LocationData getLoc1() {
+        return new LocationData(ts1, lat1, lon1, tripID);
+    }
+
+    public LocationData getLoc2() {
+        return new LocationData(ts2, lat2, lon2, tripID);
+    }
+
+    /**
+     * Create a Polyline from the Segment.
+     * @return - an OSMdroid Polyline that can be added to the map
+     */
+    public Polyline toPolyline() {
+        List<GeoPoint> points = new ArrayList<>();
+        points.add(new GeoPoint(lat1, lon1));
+        points.add(new GeoPoint(lat2, lon2));
+        Polyline line = new Polyline();
+        line.setPoints(points);
+        return line;
+    }
+
+    // ***************************** Getters and Setters *******************************************
+
     public Double getLat1() {
         return lat1;
     }
@@ -87,23 +110,6 @@ public class Segment {
 
     public Double getMaxZAccel() {
         return maxZAccel;
-    }
-
-    public LocationData getLoc1() {
-        return new LocationData(ts1, lat1, lon1, tripID);
-    }
-
-    public LocationData getLoc2() {
-        return new LocationData(ts2, lat2, lon2, tripID);
-    }
-
-    public Polyline toPolyline() {
-        List<GeoPoint> points = new ArrayList<>();
-        points.add(new GeoPoint(lat1, lon1));
-        points.add(new GeoPoint(lat2, lon2));
-        Polyline line = new Polyline();
-        line.setPoints(points);
-        return line;
     }
 
     public void setTripID(int tripID) {

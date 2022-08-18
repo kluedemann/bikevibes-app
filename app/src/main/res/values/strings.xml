@@ -13,6 +13,8 @@
 
     <!-- Toast Messages -->
     <string name="uploaded_template">Uploaded Rows: %d/%d</string>
+    <string name="upload_success">Data uploaded successfully</string>
+    <string name="upload_error">Error: Data not uploaded</string>
     <string name="no_data_text">No Data</string>
     <string name="timeout_text">Connection Timed Out</string>
     <string name="last_trip">No further trips</string>

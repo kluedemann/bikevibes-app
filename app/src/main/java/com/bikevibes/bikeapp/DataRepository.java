@@ -6,7 +6,6 @@ import androidx.lifecycle.MutableLiveData;
 
 import com.bikevibes.bikeapp.db.AccelerometerData;
 import com.bikevibes.bikeapp.db.AppDatabase;
-import com.bikevibes.bikeapp.db.DataInstance;
 import com.bikevibes.bikeapp.db.LocationData;
 import com.bikevibes.bikeapp.db.Segment;
 import com.bikevibes.bikeapp.db.TrackingDao;
@@ -232,22 +231,6 @@ public class DataRepository {
     }
 
     /**
-     * Delete the given data instance from the database.
-     * @param data - the accelerometer or GPS recording to delete
-     */
-    void delete(DataInstance data) {
-        AppDatabase.getExecutor().execute(() -> {
-            if (data instanceof LocationData) {
-                myDao.deleteLocation((LocationData) data);
-            } else if (data instanceof AccelerometerData) {
-                myDao.deleteAccel((AccelerometerData) data);
-            } else if (data instanceof TripSurface) {
-                myDao.deleteSurface((TripSurface) data);
-            }
-        });
-    }
-
-    /**
      * Return the timestamp before which to delete.
      * Usually the timestamp of the first location outside of the blackout radius.
      * Adds one if it is the last recorded location, so it is also deleted.
@@ -320,5 +303,13 @@ public class DataRepository {
 
     public void updateTrip(TripSurface trip) {
         AppDatabase.getExecutor().execute(() -> myDao.updateSurface(trip));
+    }
+
+    public void deleteUpload(int tripID) {
+        AppDatabase.getExecutor().execute(() -> {
+            myDao.deleteAccList(tripID);
+            myDao.deleteLocList(tripID);
+            myDao.deleteSurfaceList(tripID);
+        });
     }
 }

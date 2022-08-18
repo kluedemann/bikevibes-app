@@ -4,11 +4,11 @@ import androidx.annotation.NonNull;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
-import java.util.Locale;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 @Entity
-public class TripSurface extends DataInstance{
-    private static final String URL_TEMPLATE = "http://162.246.157.171:8080/upload/surface?user_id=%s&trip_id=%d";
+public class TripSurface extends DataInstance {
 
     @PrimaryKey
     private int tripID;
@@ -19,13 +19,15 @@ public class TripSurface extends DataInstance{
         this.surface = surface;
     }
 
-    @Override
-    public String getURL(String user_id) {
-        String URL = String.format(Locale.US, URL_TEMPLATE, user_id, tripID);
-        if (surface != null) {
-            URL += String.format("&surface=%s", surface);
+    public JSONObject toJSON() {
+        JSONObject jObject = new JSONObject();
+        try {
+            jObject.put("trip_id", tripID);
+            jObject.put("surface", surface);
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
-        return URL;
+        return jObject;
     }
 
     @Override
